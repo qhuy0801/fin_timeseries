@@ -1,0 +1,7 @@
+cutelog
+python-dotenv
+pandas
+fastapi
+tensorflow
+keras
+sqlalchemy
