@@ -2,7 +2,7 @@ import pandas as pd
 
 from application.main.database.entities.stock_symbols import Company
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # from application.main.database import SessionLocal
     #
     # with SessionLocal() as session:
@@ -27,9 +27,12 @@ if __name__ == '__main__':
 
     from application.main.requests.alpha_vantage import load_ticks
 
-    load_ticks(
-        func="TIME_SERIES_INTRADAY",
-        interval="30min",
-        symbol="DAY",
-        start_month="2024-02"
-    )
+    df = pd.read_csv("sp500_companies.csv")
+    for interval in ["1min", "5min", "15min", "30min"]:
+        for index, row in df.iterrows():
+            load_ticks(
+                func="TIME_SERIES_INTRADAY",
+                interval=interval,
+                symbol=row["Symbol"],
+                start_month="2000-01",
+            )
