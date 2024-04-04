@@ -16,7 +16,7 @@ from application.main.requests.rest_request import fetch_data
 
 load_dotenv()
 
-engine = create_engine(os.environ["SQLITE_LOCATION"], echo=True)
+engine = create_engine(os.environ["SQLITE_LOCATION"], echo=False)
 Session = sessionmaker(bind=engine, expire_on_commit=True)
 
 Base = declarative_base()
