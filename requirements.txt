@@ -5,3 +5,4 @@ fastapi
 tensorflow
 keras
 sqlalchemy
+requests
