@@ -1,4 +1,5 @@
 import pandas as pd
+from tqdm import tqdm
 
 from application.main.database.entities.stock_symbols import Company
 
@@ -27,12 +28,20 @@ if __name__ == "__main__":
 
     from application.main.requests.alpha_vantage import load_ticks
 
+    # load_ticks(
+    #     func="TIME_SERIES_INTRADAY",
+    #     interval="15min",
+    #     symbol="MSFT",
+    #     start_month="2000-01",
+    # )
+
     df = pd.read_csv("sp500_companies.csv")
-    for interval in ["1min", "5min", "15min", "30min"]:
-        for index, row in df.iterrows():
+    df = df.loc[df["Sector"].isin(["Technology", "Communication Services"])]
+    for interval in ["5min", "15min", "30min"]:
+        for index, row in tqdm(df.iterrows(), total=df.shape[0], position=0, leave=True):
             load_ticks(
                 func="TIME_SERIES_INTRADAY",
                 interval=interval,
                 symbol=row["Symbol"],
-                start_month="2000-01",
+                start_month="2010-01",
             )

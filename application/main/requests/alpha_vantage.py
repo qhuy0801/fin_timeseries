@@ -34,7 +34,7 @@ def load_ticks(
     extended_hours: bool = False,
     start_month: str = "2000-01",
     reverse_data: bool = True,
-    sleep: int = 1,
+    sleep: float = 0.5,
 ):
     months = month_list(start_month)
 
@@ -50,6 +50,7 @@ def load_ticks(
                 _last_timestamp_.year, _last_timestamp_.month, 1
             ):
                 months = months[index:]
+                break
 
     for month in months:
         params = {
@@ -94,7 +95,7 @@ def load_ticks(
                         session.commit()
                     except IntegrityError:
                         break
-    session.close()
+                    session.close()
     gc.collect()
     return None
 
@@ -111,9 +112,10 @@ def last_timestamp(table_name: str) -> tuple[Any, None] | None | Any:
                 session.query(_tick.timestamp)
                 .order_by(_tick.timestamp.desc())
                 .first()
-                .timestamp
             )
-        return _tick, timestamp if timestamp else None
+            if timestamp:
+                return _tick, timestamp.timestamp
+            return _tick, None
 
 
 def month_list(start_month: str) -> List[str]:
