@@ -7,3 +7,4 @@ keras
 sqlalchemy
 requests
 tqdm
+polars
