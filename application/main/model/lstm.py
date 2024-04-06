@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import Optional, List
 
 from keras import Sequential
