@@ -38,7 +38,7 @@ def load_ticks(
 ):
     months = month_list(start_month)
 
-    table_name = param_check(
+    table_name = get_table_name(
         func=func, interval=interval, symbol=symbol
     )
 
@@ -128,7 +128,7 @@ def month_list(start_month: str) -> List[str]:
     )
 
 
-def param_check(func: str, interval: Optional[str], symbol: str) -> str:
+def get_table_name(func: str, interval: Optional[str], symbol: str) -> str:
     if interval in ["daily, weekly, monthly", None]:
         return "_".join([func, symbol])
     else:
