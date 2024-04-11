@@ -1,6 +1,12 @@
+import os
+
 import pandas as pd
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy.orm import sessionmaker, declarative_base
 from tqdm import tqdm
 
+from application.main.database.entities.correlation import Correlation
 from application.main.database.entities.stock_symbols import Company
 
 if __name__ == "__main__":
@@ -35,13 +41,34 @@ if __name__ == "__main__":
     #     start_month="2000-01",
     # )
 
-    df = pd.read_csv("sp500_companies.csv")
-    df = df.loc[df["Sector"].isin(["Technology", "Communication Services"])]
-    for interval in ["5min", "15min", "30min"]:
-        for index, row in tqdm(df.iterrows(), total=df.shape[0], position=0, leave=True):
-            load_ticks(
-                func="TIME_SERIES_INTRADAY",
-                interval=interval,
-                symbol=row["Symbol"],
-                start_month="2010-01",
-            )
+    # df = pd.read_csv("sp500_companies.csv")
+    # df = df.loc[df["Sector"].isin(["Technology", "Communication Services"])]
+    # for interval in ["15min"]:
+    #     for index, row in tqdm(df.iterrows(), total=df.shape[0], position=0, leave=True):
+    #         load_ticks(
+    #             func="TIME_SERIES_INTRADAY",
+    #             interval=interval,
+    #             symbol=row["Symbol"],
+    #             start_month="2010-01",
+    #         )
+    #
+    #
+    #
+    # load_dotenv()
+    #
+    # engine = create_engine(os.environ["SQLITE_LOCATION"], echo=False)
+    # Session = sessionmaker(bind=engine, expire_on_commit=True)
+    #
+    # # Define the base class
+    # Base = declarative_base()
+    #
+    # class Correlation(Base):
+    #     __tablename__ = 'correlations'
+    #     id = Column(Integer, primary_key=True)
+    #     symbol_1 = Column(String(10), nullable=False)
+    #     symbol_2 = Column(String(10), nullable=False)
+    #     correlation = Column(Float, nullable=False)
+    #     p_value = Column(Float, nullable=False)
+    #     target_field = Column(String(10))
+    #
+    # Base.metadata.create_all(engine)
