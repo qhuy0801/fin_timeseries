@@ -4,7 +4,7 @@ Dynamic programming algorithms
 from typing import List, Callable, Generator
 
 
-def dynamic_processing(arr: List, func: Callable) -> Generator:
+def dynamic_processing(arr: List, func: Callable, **kwargs) -> Generator:
     """
     Dynamic programming with single list (array)
     :param arr:
@@ -21,7 +21,7 @@ def dynamic_processing(arr: List, func: Callable) -> Generator:
                     if e_i in memo[e_j]:
                         continue
                     memo[e_j].append(e_i)
-                    yield e_i, e_j, func(e_i, e_j)
+                    yield e_i, e_j, func(e_i, e_j, **kwargs)
                 else:
                     memo[e_i] = [e_j]
-                    yield e_i, e_j, func(e_i, e_j)
+                    yield e_i, e_j, func(e_i, e_j, **kwargs)
