@@ -3,7 +3,7 @@ from sqlalchemy import exc as sa_exc
 from sqlalchemy import Integer, Column, DateTime, Float
 
 
-def tick(Base, table_name):
+def stock_tick(Base, table_name):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 

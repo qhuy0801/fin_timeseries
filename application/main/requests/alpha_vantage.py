@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from application.main.database.entities.tick import tick
+from application.main.database.entities.stock_tick import stock_tick
 from application.main.requests.rest_request import fetch_data
 
 
@@ -102,12 +102,12 @@ def load_ticks(
 
 def last_timestamp(table_name: str) -> tuple[Any, None] | None | Any:
     if not inspect(engine).has_table(table_name):
-        _tick = tick(Base, table_name)
+        _tick = stock_tick(Base, table_name)
         Base.metadata.create_all(engine)
         return _tick, None
     else:
         with Session() as session:
-            _tick = tick(Base, table_name)
+            _tick = stock_tick(Base, table_name)
             timestamp = (
                 session.query(_tick.timestamp)
                 .order_by(_tick.timestamp.desc())
