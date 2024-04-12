@@ -1,8 +1,11 @@
+import gc
 from typing import Optional, List
 
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from keras.preprocessing import timeseries_dataset_from_array
+
+from application.main.utils.timeframe_processing import process_timeframe
 
 
 class OLHC_Trend_TSGenerator:
@@ -18,89 +21,45 @@ class OLHC_Trend_TSGenerator:
     ) -> None:
         super().__init__()
 
-        # Initialize with the timeframe of df_target_asset
-        start_time = df_target_asset["timestamp"].min()
-        end_time = df_target_asset["timestamp"].max()
-
+        # Get the trend target (long/short)
         df_target_asset["trend"] = (
             df_target_asset[target_field] <= df_target_asset[target_field].shift(-1)
         ).astype(int)
-
         df_target_asset = df_target_asset[:-1]
 
-        # Update the timeframe based on df_correlated_asset and df_indicators
-        if df_correlated_asset is not None:
-            for index, df in enumerate(df_correlated_asset):
-                df = df.rename(
-                    columns={
-                        col: f"{col}_{index}"
-                        for col in df.columns
-                        if col != "timestamp"
-                    }
-                )
-                start_time = max(start_time, df["timestamp"].min())
-                end_time = min(end_time, df["timestamp"].max())
+        # Crop and match the timestamp
+        x = [df_target_asset, *df_correlated_asset, *df_indicators]
+        x = process_timeframe(x)
 
-        if df_indicators is not None:
-            for index, df in enumerate(df_indicators):
-                df = df.rename(
-                    columns={
-                        col: f"{col}_{index}"
-                        for col in df.columns
-                        if col != "timestamp"
-                    }
-                )
-                start_time = max(start_time, df["timestamp"].min())
-                end_time = min(end_time, df["timestamp"].max())
+        # Gather the y (target)
+        self.y = x[0]["trend"].to_numpy()
 
-        # Crop df_target_asset
-        df_target_asset = df_target_asset[
-            (df_target_asset["timestamp"] >= start_time)
-            & (df_target_asset["timestamp"] <= end_time)
-        ]
-
-        # Crop each DataFrame in df_correlated_asset and df_indicators
-        if df_correlated_asset is not None:
-            df_correlated_asset = [
-                df[(df["timestamp"] >= start_time) & (df["timestamp"] <= end_time)]
-                for df in df_correlated_asset
-            ]
-
-        if df_indicators is not None:
-            df_indicators = [
-                df[(df["timestamp"] >= start_time) & (df["timestamp"] <= end_time)]
-                for df in df_indicators
-            ]
-
-        # Gather the y
-        self.y = df_target_asset["trend"].to_numpy()
-
-        # Concat all dataframes and scale
-        # Concatenate correlated assets, if any
-        if df_correlated_asset is not None:
-            for df in df_correlated_asset:
-                df_target_asset = pd.merge(
-                    df_target_asset, df, on="timestamp", how="left"
+        # Drop the target and merge all
+        x[0].drop(columns=["trend"], inplace=True)
+        for df in x[:1]:
+            x[0] = pd.merge(
+                    x[0], df, left_index=True, right_index=True
                 )
 
-        # Concatenate indicators, if any
-        if df_indicators is not None:
-            for df in df_indicators:
-                df_target_asset = pd.merge(
-                    df_target_asset, df, on="timestamp", how="left"
-                )
-
-        df_target_asset.drop(columns=["timestamp", "trend"], inplace=True)
-        df_target_asset = df_target_asset.to_numpy()
+        # Drop timestamp
+        x[0].drop(columns=["timestamp"], inplace=True)
+        x[0] = df_target_asset.reset_index(drop=True).to_numpy()
 
         scaler = MinMaxScaler(feature_range=scaling_range)
 
         # Gather the x
-        self.x = scaler.fit_transform(df_target_asset)
+        self.x = scaler.fit_transform(x[0])
 
         # Other setting
         self.sequence_length = sequence_length
         self.batch_size = batch_size
+
+        # Finalising and clean up
+        df_target_asset = None
+        df_correlated_asset = None
+        df_indicators = None
+        x = None
+        gc.collect()
 
     def get_ts_generator(self, shuffle: bool = False):
         return timeseries_dataset_from_array(
