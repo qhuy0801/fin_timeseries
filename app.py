@@ -1,11 +1,20 @@
-import os
+import streamlit as st
+from streamlit_option_menu import option_menu
 
-import sqlalchemy
-from dotenv import load_dotenv
-from application.main.database.entities.stock_tick import stock_tick
-from application.main.database.factory.sqlite import engine
+st.set_page_config(
+    page_title="Times Series Signal Processing",
+    layout="wide",
+    initial_sidebar_state="auto",
+    menu_items={"About": "qhuy0168@gmail.com"},
+)
 
-# load_dotenv()
+with st.sidebar:
+    selected = option_menu(
+        menu_title="Main menu",
+        menu_icon="cast",
+        options=["QCOM"],
+        icons=["cpu"],
+        default_index=0,
+    )
 
-if __name__ == '__main__':
-    stock_tick("TIME_SERIES_DAILY_30min_AAPL").__table__.drop(engine)
+exec(open(f"./application/main/frontend/modules/{selected.lower()}.py").read())

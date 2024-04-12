@@ -10,3 +10,5 @@ tqdm
 polars
 scikit-learn
 scipy
+streamlit
+streamlit_option_menu
