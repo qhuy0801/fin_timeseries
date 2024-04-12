@@ -13,7 +13,7 @@ from application.main.algo.dynamic import dynamic_processing
 from application.main.database.entities.correlation import Correlation
 from application.main.database.entities.stock_tick import stock_tick
 from application.main.requests.alpha_vantage import get_table_name
-from application.main.utils.timeframe_processing import timeframe_cropping
+from application.main.utils.timeframe_processing import process_timeframe
 
 load_dotenv()
 
@@ -93,9 +93,11 @@ def query_and_compute(tick_1, tick_2, target_field: str = "close") -> (float, fl
         query_2 = session.query(tick_2).order_by(tick_2.timestamp.asc())
 
         # Convert to pandas and crop the timeframe
-        table_1, table_2 = timeframe_cropping(
-            pd.read_sql(query_1.statement, session.bind),
-            pd.read_sql(query_2.statement, session.bind),
+        table_1, table_2 = process_timeframe(
+            dataframes=[
+                pd.read_sql(query_1.statement, session.bind),
+                pd.read_sql(query_2.statement, session.bind),
+            ]
         )
 
         # Scale data

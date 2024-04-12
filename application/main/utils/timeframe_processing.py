@@ -1,37 +1,44 @@
 """
 The module for processing the trading timeframe
 """
+from typing import List
+
 import pandas as pd
 
 
-def timeframe_cropping(df1: pd.DataFrame, df2: pd.DataFrame, index_column: str = "timestamp") -> (pd.DataFrame, pd.DataFrame):
+def process_timeframe(
+    dataframes: List[pd.DataFrame], index_column: str = "timestamp"
+) -> List[pd.DataFrame]:
     """
-    Crop two DataFrames to the common timeframe that both DataFrames cover,
-    with indices in "YYYY-MM-DD" format.
 
-    Parameters:
-    - df1: First DataFrame with index in "YYYY-MM-DD" format.
-    - df2: Second DataFrame with index in "YYYY-MM-DD" format.
+    Args:
+        dataframes (List[pd.DataFrame]): List of DataFrames with index in "YYYY-MM-DD" format.
+        index_column (str): Name of the column to use as the index, default 'timestamp'.
 
     Returns:
-    - Tuple of DataFrames cropped to the common timeframe.
+        List[pd.DataFrame]: List of DataFrames cropped to the common timeframe with matched indices.
     """
-    # Ensure the index is in datetime format
-    df1, df2 = df1.set_index(index_column), df2.set_index(index_column)
-    df1.index = pd.to_datetime(df1.index)
-    df2.index = pd.to_datetime(df2.index)
 
-    # Find the common start and end dates
-    common_start = max(df1.index.min(), df2.index.min())
-    common_end = min(df1.index.max(), df2.index.max())
+    # Set indices to the specified column and convert to datetime
+    for i in range(len(dataframes)):
+        dataframes[i] = dataframes[i].set_index(index_column)
+        dataframes[i].index = pd.to_datetime(dataframes[i].index)
 
-    # Crop both DataFrames to the common timeframe
-    df1_cropped = df1[(df1.index >= common_start) & (df1.index <= common_end)]
-    df2_cropped = df2[(df2.index >= common_start) & (df2.index <= common_end)]
+    # Determine the common timeframe across all dataframes
+    common_start = max(df.index.min() for df in dataframes)
+    common_end = min(df.index.max() for df in dataframes)
 
-    # Align indices to ensure they match by using intersection of indices
-    common_indices = df1_cropped.index.intersection(df2_cropped.index)
-    df1_aligned = df1_cropped.reindex(common_indices)
-    df2_aligned = df2_cropped.reindex(common_indices)
+    # Crop each dataframe to the common timeframe
+    cropped_dataframes = [
+        df[(df.index >= common_start) & (df.index <= common_end)] for df in dataframes
+    ]
 
-    return df1_aligned, df2_aligned
+    # Find the intersection of indices from all dataframes
+    common_indices = cropped_dataframes[0].index
+    for df in cropped_dataframes[1:]:
+        common_indices = common_indices.intersection(df.index)
+
+    # Reindex all dataframes to the common indices
+    aligned_dataframes = [df.reindex(common_indices) for df in cropped_dataframes]
+
+    return aligned_dataframes
