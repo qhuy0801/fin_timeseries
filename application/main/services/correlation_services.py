@@ -5,7 +5,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from scipy.stats import pearsonr
 from sklearn.preprocessing import minmax_scale
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, or_, and_, desc, func
 
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -70,9 +70,7 @@ def generate_correlation(
             session.close()
 
 
-def query_and_compute(
-    tick_1, tick_2, target_field: str = "close"
-) -> (float, float):
+def query_and_compute(tick_1, tick_2, target_field: str = "close") -> (float, float):
     """
     Get table name, match timeframe, scale data, calculate Pearson correlation based on target field
     Args:
@@ -86,13 +84,9 @@ def query_and_compute(
     with Session() as session:
         # Check table
         if not hasattr(tick_1, target_field):
-            raise AttributeError(
-                f"{target_field} is not a valid attribute of tick_1."
-            )
+            raise AttributeError(f"{target_field} is not a valid attribute of tick_1.")
         if not hasattr(tick_2, target_field):
-            raise AttributeError(
-                f"{target_field} is not a valid attribute of tick_2."
-            )
+            raise AttributeError(f"{target_field} is not a valid attribute of tick_2.")
 
         # Query
         query_1 = session.query(tick_1).order_by(tick_1.timestamp.asc())
@@ -110,3 +104,64 @@ def query_and_compute(
         )
 
         return pearsonr(table_1, table_2)
+
+
+def query_and_filter(
+    symbol: Optional[str] = "QCOM",
+    function: Optional[str] = "TIME_SERIES_INTRADAY",
+    interval: Optional[str] = "15min",
+    sort: Optional[str] = "abs_desc",
+    limit: Optional[int] = 10,
+):
+    """
+    Queries records from the Correlation table based on optional filters for symbols, function, and interval.
+
+    Args:
+        symbol (Optional[str]): Stock symbols to filter the data, or None to fetch all records.
+        function (Optional[str]): The function type to filter by (default "TIME_SERIES_INTRADAY").
+        interval (Optional[str]): The interval to filter by (default "15min").
+        sort (Optional[str]): Sorting method ('asc', 'desc', 'abs_asc', 'abs_desc').
+        limit: (Optional[int]): The number of records to return (default 10).
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the filtered records.
+    """
+    with Session() as session:
+        query = session.query(Correlation)
+
+        # Build the LIKE pattern based on optional function and interval
+        if function and interval:
+            symbol_pattern = f"{function}_{interval}_{symbol}"
+        else:
+            # If function and interval aren't specified, just search for the symbol
+            symbol_pattern = f"%{symbol}"
+
+        # Apply the filter condition
+        query = query.filter(
+            or_(
+                Correlation.symbol_1.like(symbol_pattern),
+                Correlation.symbol_2.like(symbol_pattern),
+            )
+        )
+
+        # Apply sorting based on the sort argument
+        if sort == "asc":
+            query = query.order_by(Correlation.correlation)
+        elif sort == "desc":
+            query = query.order_by(desc(Correlation.correlation))
+        elif sort == "abs_asc":
+            query = query.order_by(func.abs(Correlation.correlation))
+        elif sort == "abs_desc":
+            query = query.order_by(desc(func.abs(Correlation.correlation)))
+
+        # Apply limit to the query results if showing is specified
+        if limit is not None and isinstance(limit, int):
+            query = query.limit(limit)
+
+        df = pd.read_sql(query.statement, session.bind)
+        return df
+
+
+if __name__ == "__main__":
+    df = query_and_filter("QCOM", function=None, interval=None, sort="asc")
+    print(df)
