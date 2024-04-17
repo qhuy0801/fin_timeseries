@@ -2,7 +2,7 @@ import gc
 import os
 import time
 from datetime import datetime
-from typing import List, Any, Optional
+from typing import List, Any
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from application.main.database.entities.stock_tick import stock_tick
 from application.main.requests.rest_request import fetch_data
-
+from application.main.utils.sql_utils import get_table_name
 
 load_dotenv()
 
@@ -126,10 +126,3 @@ def month_list(start_month: str) -> List[str]:
         .strftime("%Y-%m")
         .tolist()
     )
-
-
-def get_table_name(func: str, interval: Optional[str], symbol: str) -> str:
-    if interval in ["daily, weekly, monthly", None]:
-        return "_".join([func, symbol])
-    else:
-        return "_".join([func, interval, symbol])
