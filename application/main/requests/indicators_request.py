@@ -84,9 +84,9 @@ def load_indicator_ticks(
             ) > datetime.strptime(month, "%Y-%m"):
                 continue
             else:
+                response.columns = [col.lower().replace(' ', '_') for col in response.columns]
                 if _last_timestamp_:
                     response = response[response["time"] > _last_timestamp_]
-                    response.columns = [col.lower().replace(' ', '_') for col in response.columns]
                 with Session() as session:
                     for index, row in response.iterrows():
                         __tick = _tick()
@@ -103,7 +103,7 @@ def load_indicator_ticks(
 
 
 def last_timestamp(table_name: str) -> tuple[Any, None] | None | Any:
-    _tick = getattr(indicators, table_name.split('_')[0] + f"_tick", None)
+    _tick = getattr(indicators, table_name.split('_')[0].lower() + f"_tick", None)
     if not inspect(engine).has_table(table_name):
         _tick = _tick(Base, table_name)
         Base.metadata.create_all(engine)
@@ -117,7 +117,7 @@ def last_timestamp(table_name: str) -> tuple[Any, None] | None | Any:
                 .first()
             )
             if timestamp:
-                return _tick, timestamp.timestamp
+                return _tick, timestamp.time
             return _tick, None
 
 

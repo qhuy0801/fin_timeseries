@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from application.main.database.entities.correlation import Correlation
 from application.main.database.entities.stock_symbols import Company
+from application.main.requests.indicators_request import load_indicator_ticks
 from application.main.services.correlation_services import query_and_filter
 
 if __name__ == "__main__":
@@ -53,7 +54,16 @@ if __name__ == "__main__":
     #             start_month="2010-01",
     #         )
     #
-    #
+    load_indicator_ticks(
+        func="bbands",
+        symbol="QCOM",
+        interval="15min",
+        start_month="2024-01",
+        time_period="10",
+        series_type="close",
+        nbdevup="1.5",
+        nbdevdn="1.5",
+    )
     #
     # load_dotenv()
     #
@@ -78,8 +88,3 @@ if __name__ == "__main__":
     #
     # df = query_and_filter("QCOM", function=None, interval=None, sort='abs_asc')
     # print(df)
-
-    # AAPL = [0.2, 0.3]
-    # MSFT = [0.3, 0.2]
-    # _substract = AAPL - MSFT
-    # for i in range(1, len(_substract)):

@@ -16,7 +16,7 @@ def get_table_name(func: str, interval: Optional[str], symbol: str, **kwargs) ->
         base_name = "_".join([func, interval, symbol])
 
     # General handling for any function listed in indicators
-    if func in _indicators:
+    if func.lower() in _indicators:
         params = _indicators[func]
         # Append each parameter to the base name, fetching from kwargs or using 'default'
         for param in params:
