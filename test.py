@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from application.main.database.entities.correlation import Correlation
 from application.main.database.entities.stock_symbols import Company
+from application.main.services.correlation_services import query_and_filter
 
 if __name__ == "__main__":
     # from application.main.database import SessionLocal
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     #     session.commit()
     #     session.close()
 
-    from application.main.requests.alpha_vantage import load_ticks
+    from application.main.requests.stock import load_ticks
 
     # load_ticks(
     #     func="TIME_SERIES_INTRADAY",
@@ -72,3 +73,13 @@ if __name__ == "__main__":
     #     target_field = Column(String(10))
     #
     # Base.metadata.create_all(engine)
+
+    # stock_tick("TIME_SERIES_DAILY_30min_AAPL").__table__.drop(engine)
+    #
+    # df = query_and_filter("QCOM", function=None, interval=None, sort='abs_asc')
+    # print(df)
+
+    # AAPL = [0.2, 0.3]
+    # MSFT = [0.3, 0.2]
+    # _substract = AAPL - MSFT
+    # for i in range(1, len(_substract)):
