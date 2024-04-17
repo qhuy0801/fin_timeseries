@@ -1,4 +1,5 @@
 import gc
+import importlib
 import os
 import time
 from datetime import datetime
@@ -10,7 +11,6 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from application.main.database.entities.stock_tick import stock_tick
 from application.main.requests.rest_request import fetch_data
 from application.main.utils.sql_utils import get_table_name
 
@@ -21,8 +21,11 @@ Session = sessionmaker(bind=engine, expire_on_commit=True)
 
 Base = declarative_base()
 
+indicators_path = "application.main.database.entities.indicators"
+indicators = importlib.import_module(indicators_path)
 
-def load_ticks(
+
+def load_indicator_ticks(
     func: str,
     interval: str,
     symbol: str,
@@ -35,11 +38,12 @@ def load_ticks(
     start_month: str = "2000-01",
     reverse_data: bool = True,
     sleep: float = 0.5,
+    **kwargs,
 ):
     months = month_list(start_month)
 
     table_name = get_table_name(
-        func=func, interval=interval, symbol=symbol
+        func=func, interval=interval, symbol=symbol, **kwargs,
     )
 
     _tick, _last_timestamp_ = last_timestamp(table_name)
@@ -62,6 +66,7 @@ def load_ticks(
             "apikey": apikey,
             "extended_hours": "false" if not extended_hours else "true",
             "month": month,
+            **kwargs
         }
         response = fetch_data(
             url=url,
@@ -71,26 +76,23 @@ def load_ticks(
         )
         time.sleep(sleep)
         if isinstance(response, pd.DataFrame):
-            response["timestamp"] = pd.to_datetime(response["timestamp"])
+            response["time"] = pd.to_datetime(response["time"])
             if response.empty:
                 continue
-            if response["timestamp"].iat[0].replace(
+            if response["time"].iat[0].replace(
                 day=1, hour=0, minute=0, second=0, microsecond=0
             ) > datetime.strptime(month, "%Y-%m"):
                 continue
             else:
                 if _last_timestamp_:
-                    response = response[response["timestamp"] > _last_timestamp_]
+                    response = response[response["time"] > _last_timestamp_]
+                    response.columns = [col.lower().replace(' ', '_') for col in response.columns]
                 with Session() as session:
                     for index, row in response.iterrows():
-                        _tick_ = _tick(
-                            timestamp=pd.to_datetime(row["timestamp"]),
-                            open=row["open"],
-                            high=row["high"],
-                            low=row["low"],
-                            close=row["close"],
-                        )
-                        session.add(_tick_)
+                        __tick = _tick()
+                        for col_name in row.index:
+                            setattr(__tick, col_name, row[col_name])
+                        session.add(__tick)
                     try:
                         session.commit()
                     except IntegrityError:
@@ -101,16 +103,17 @@ def load_ticks(
 
 
 def last_timestamp(table_name: str) -> tuple[Any, None] | None | Any:
+    _tick = getattr(indicators, table_name.split('_')[0] + f"_tick", None)
     if not inspect(engine).has_table(table_name):
-        _tick = stock_tick(Base, table_name)
+        _tick = _tick(Base, table_name)
         Base.metadata.create_all(engine)
         return _tick, None
     else:
         with Session() as session:
-            _tick = stock_tick(Base, table_name)
+            _tick = _tick(Base, table_name)
             timestamp = (
-                session.query(_tick.timestamp)
-                .order_by(_tick.timestamp.desc())
+                session.query(_tick.time)
+                .order_by(_tick.time.desc())
                 .first()
             )
             if timestamp:

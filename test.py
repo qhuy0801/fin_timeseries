@@ -33,7 +33,7 @@ if __name__ == "__main__":
     #     session.commit()
     #     session.close()
 
-    from application.main.requests.stock import load_ticks
+    from application.main.requests.stock_request import load_stock_ticks
 
     # load_ticks(
     #     func="TIME_SERIES_INTRADAY",

@@ -4,6 +4,7 @@ _indicators = {
     "sma": ["time_period", "series_type"],
     "ema": ["time_period", "series_type"],
     "macd": ["series_type", "fastperiod", "slowperiod", "signalperiod"],
+    "bbands": ["time_period", "series_type", "nbdevup", "nbdevdn"]
 }
 
 

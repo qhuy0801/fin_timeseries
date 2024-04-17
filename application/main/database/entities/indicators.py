@@ -17,7 +17,7 @@ def macd_tick(Base, table_name):
     return MacdTick
 
 
-def bbands_ticks(Base, table_name):
+def bbands_tick(Base, table_name):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 
@@ -31,7 +31,7 @@ def bbands_ticks(Base, table_name):
     return BBandsTick
 
 
-def rsi_ticks(Base, table_name):
+def rsi_tick(Base, table_name):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=sa_exc.SAWarning)
 
