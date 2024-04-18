@@ -12,3 +12,5 @@ scikit-learn
 scipy
 streamlit
 streamlit_option_menu
+pydantic
+uvicorn
