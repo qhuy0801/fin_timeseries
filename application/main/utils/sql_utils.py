@@ -1,10 +1,10 @@
 from typing import Optional
 
 _indicators = {
-    "sma": ["time_period", "series_type"],
-    "ema": ["time_period", "series_type"],
-    "macd": ["series_type", "fastperiod", "slowperiod", "signalperiod"],
-    "bbands": ["time_period", "series_type", "nbdevup", "nbdevdn"]
+    "SMA": ["time_period", "series_type"],
+    "EMA": ["time_period", "series_type"],
+    "MACD": ["series_type", "fastperiod", "slowperiod", "signalperiod"],
+    "BBANDS": ["time_period", "series_type", "nbdevup", "nbdevdn"]
 }
 
 
@@ -16,7 +16,7 @@ def get_table_name(func: str, interval: Optional[str], symbol: str, **kwargs) ->
         base_name = "_".join([func, interval, symbol])
 
     # General handling for any function listed in indicators
-    if func.lower() in _indicators:
+    if func in _indicators:
         params = _indicators[func]
         # Append each parameter to the base name, fetching from kwargs or using 'default'
         for param in params:

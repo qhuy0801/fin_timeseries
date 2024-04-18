@@ -76,17 +76,18 @@ def load_indicator_ticks(
         )
         time.sleep(sleep)
         if isinstance(response, pd.DataFrame):
-            response["time"] = pd.to_datetime(response["time"])
+            response.rename(columns={'time': 'timestamp'}, inplace=True)
+            response["timestamp"] = pd.to_datetime(response["timestamp"])
             if response.empty:
                 continue
-            if response["time"].iat[0].replace(
+            if response["timestamp"].iat[0].replace(
                 day=1, hour=0, minute=0, second=0, microsecond=0
             ) > datetime.strptime(month, "%Y-%m"):
                 continue
             else:
                 response.columns = [col.lower().replace(' ', '_') for col in response.columns]
                 if _last_timestamp_:
-                    response = response[response["time"] > _last_timestamp_]
+                    response = response[response["timestamp"] > _last_timestamp_]
                 with Session() as session:
                     for index, row in response.iterrows():
                         __tick = _tick()
@@ -112,12 +113,12 @@ def last_timestamp(table_name: str) -> tuple[Any, None] | None | Any:
         with Session() as session:
             _tick = _tick(Base, table_name)
             timestamp = (
-                session.query(_tick.time)
-                .order_by(_tick.time.desc())
+                session.query(_tick.timestamp)
+                .order_by(_tick.timestamp.desc())
                 .first()
             )
             if timestamp:
-                return _tick, timestamp.time
+                return _tick, timestamp.timestamp
             return _tick, None
 
 
