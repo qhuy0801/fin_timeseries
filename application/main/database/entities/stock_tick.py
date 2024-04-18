@@ -9,6 +9,7 @@ def stock_tick(Base, table_name):
 
         class Tick(Base):
             __tablename__ = f"{table_name}"
+            __table_args__ = {'extend_existing': True}
             id = Column(Integer, primary_key=True)
             timestamp = Column(DateTime, unique=True)
             open = Column(Float)

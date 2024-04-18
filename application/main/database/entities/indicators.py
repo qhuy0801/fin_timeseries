@@ -9,6 +9,7 @@ def macd_tick(Base, table_name):
 
         class MacdTick(Base):
             __tablename__ = f"{table_name}"
+            __table_args__ = {'extend_existing': True}
             id = Column(Integer, primary_key=True)
             timestamp = Column(DateTime, unique=True)
             macd = Column(Float)
@@ -23,6 +24,7 @@ def bbands_tick(Base, table_name):
 
         class BBandsTick(Base):
             __tablename__ = f"{table_name}"
+            __table_args__ = {'extend_existing': True}
             id = Column(Integer, primary_key=True)
             timestamp = Column(DateTime, unique=True)
             real_lower_band = Column(Float)
@@ -37,6 +39,7 @@ def rsi_tick(Base, table_name):
 
         class RSITick(Base):
             __tablename__ = f"{table_name}"
+            __table_args__ = {'extend_existing': True}
             id = Column(Integer, primary_key=True)
             timestamp = Column(DateTime, unique=True)
             rsi = Column(Float)
