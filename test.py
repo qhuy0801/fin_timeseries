@@ -55,14 +55,17 @@ if __name__ == "__main__":
     #         )
     #
     load_indicator_ticks(
-        func="bbands",
+        func="BBANDS",
         symbol="QCOM",
         interval="15min",
-        start_month="2024-01",
+        start_month="2010-01",
         time_period="10",
         series_type="close",
         nbdevup="1.5",
         nbdevdn="1.5",
+        fastperiod="12",
+        slowperiod="26",
+        signalperiod="9"
     )
     #
     # load_dotenv()
