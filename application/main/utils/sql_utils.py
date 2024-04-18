@@ -1,11 +1,5 @@
 from typing import Optional
-
-_indicators = {
-    "SMA": ["time_period", "series_type"],
-    "EMA": ["time_period", "series_type"],
-    "MACD": ["series_type", "fastperiod", "slowperiod", "signalperiod"],
-    "BBANDS": ["time_period", "series_type", "nbdevup", "nbdevdn"]
-}
+from .indicator_utils import _indicator_required_settings
 
 
 def get_table_name(func: str, interval: Optional[str], symbol: str, **kwargs) -> str:
@@ -16,11 +10,17 @@ def get_table_name(func: str, interval: Optional[str], symbol: str, **kwargs) ->
         base_name = "_".join([func, interval, symbol])
 
     # General handling for any function listed in indicators
-    if func in _indicators:
-        params = _indicators[func]
-        # Append each parameter to the base name, fetching from kwargs or using 'default'
-        for param in params:
-            value = kwargs.get(param)
-            base_name += f"_{value}"
+    if func in _indicator_required_settings:
+        Model = _indicator_required_settings[func]  # Retrieve the Pydantic model class
+        try:
+            # Create an instance of the model using kwargs
+            model_instance = Model(**kwargs)
+            # Extract model data to append to the base name
+            model_data = model_instance.dict(exclude_none=True)  # Exclude None values
+            # Append each available parameter to the base name
+            for value in model_data.values():
+                base_name += f"_{value}"
+        except Exception as e:
+            raise ValueError(f"Error processing data for {func}: {e}")
 
     return base_name
