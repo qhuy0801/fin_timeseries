@@ -1,24 +1,22 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple, Any, Generator
 
+import numpy as np
 import pandas as pd
-from keras.src.utils.module_utils import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-from keras.preprocessing import timeseries_dataset_from_array
 
 from application.main.utils.timeframe_processing import process_timeframe
 
 
-def generate_trend_ts(
+def trend_ts(
     df_target_asset: pd.DataFrame,
     df_correlated_asset: Optional[List[pd.DataFrame]] = None,
     df_indicators: Optional[List[pd.DataFrame]] = None,
     target_field: str = "close",
     sequence_length: int = 60,
-    batch_size: int = 32,
-    scaling_range: (int, int) = (-1, 1),
-    shuffle: bool = False,
-) -> Optional[tf.data.Dataset]:
-    super().__init__()
+    scaling_range: Tuple[int, int] = (-1, 1),
+    to_generator: bool = True,
+    **kwargs: Any,
+):
 
     # Get the trend target (long/short)
     df_target_asset["trend"] = (
@@ -35,22 +33,24 @@ def generate_trend_ts(
 
     # Drop the target and merge all
     x[0].drop(columns=["trend"], inplace=True)
-    for df in x[:1]:
+    for df in x[1:]:
         x[0] = pd.merge(x[0], df, left_index=True, right_index=True)
 
-    # Drop timestamp
-    x[0].drop(columns=["timestamp"], inplace=True)
-    x[0] = df_target_asset.reset_index(drop=True).to_numpy()
+    # Convert to numpy
+    x[0] = x[0].reset_index(drop=True).to_numpy()
 
     scaler = MinMaxScaler(feature_range=scaling_range)
 
     # Gather the x
     x = scaler.fit_transform(x[0])
 
-    return timeseries_dataset_from_array(
-        x[sequence_length],
-        y[sequence_length - 1 :],
-        sequence_length=sequence_length,
-        batch_size=batch_size,
-        shuffle=shuffle,
-    )
+    if to_generator:
+        # Generator expression
+        return ((x[i: i + sequence_length], y[i + sequence_length - 1]) for i in range(len(x) - sequence_length))
+    else:
+        # Process the data into arrays
+        X, Y = [], []
+        for i in range(len(x) - sequence_length):
+            X.append(x[i: i + sequence_length])
+            Y.append(y[i + sequence_length - 1])
+        return np.array(X), np.array(Y)
