@@ -29,56 +29,68 @@ def query_to_ts(
     target_symbol: str,
     training_period: Optional[Tuple[datetime, datetime]],
     testing_period: Optional[Tuple[datetime, datetime]],
-    # validation_ratio: Optional[float],
     correlated_symbols: Optional[List[str]],
-    indicator_funcs=Optional[List[str]],
+    indicator_funcs: Optional[List[str]],
     **kwargs,
-):
+) -> Tuple[
+    pd.DataFrame,
+    pd.DataFrame | None,
+    List[pd.DataFrame] | None,
+    List[pd.DataFrame] | None,
+    List[pd.DataFrame] | None,
+    List[pd.DataFrame] | None,
+]:
     """
-
+    Query the target symbol data, correlated data and technical indicators
     Args:
-        func:
-        interval:
-        target_symbol:
-        training_period:
-        testing_period:
-        correlated_symbols:
-        indicator_funcs:
-        **kwargs:
+        func (str): Timeframe TIME_SERIES_INTRADAY/ TIME_SERIES_DAILY
+        interval (str): 1min, 5min, 15min, 30min, 60min
+        target_symbol (str): The asset symbol
+        training_period (Optional[Tuple[datetime, datetime]]): If None provided then the default is from 2010-01-01 to now
+        testing_period (Optional[Tuple[datetime, datetime]]): If None provided then there the testing output will be None
+        correlated_symbols (Optional[List[str]]): The assets that have high correlation to the target asset
+        indicator_funcs (Optional[List[str]]): List of indicator which serve the training purpose
+        **kwargs: Other supported parameters for the indicators
 
     Returns:
-
+        target_training (pandas.DataFrame)
+        target_testing (Optional[List[pandas.DataFrame]])
+        correlated_training (Optional[List[pandas.DataFrame]])
+        correlated_testing (Optional[List[pandas.DataFrame]])
+        indicator_training (Optional[List[pandas.DataFrame]])
+        indicator_testing (Optional[List[pandas.DataFrame]])
     """
     # Process the timeframe
     if not training_period:
         training_period = (datetime(2010, 1, 1), datetime.now())
 
     # Gather the target data
-    target_symbol = get_table_name(func, interval, target_symbol)
-    target_symbol = stock_tick(Base, target_symbol)
+    _target_symbol = stock_tick(Base, get_table_name(func, interval, target_symbol))
 
     # Target symbol
     target_training = None
     target_testing = None
     with Session() as session:
         target_training = pd.read_sql(
-            session.query(target_symbol)
+            session.query(_target_symbol)
             .filter(
-                target_symbol.timestamp >= training_period[0],
-                target_symbol.timestamp <= training_period[1],
+                _target_symbol.timestamp >= training_period[0],
+                _target_symbol.timestamp <= training_period[1],
             )
-            .order_by(target_symbol.timestamp),
-            session.bind(),
+            .order_by(_target_symbol.timestamp)
+            .statement,
+            session.bind,
         )
         if testing_period:
             target_testing = pd.read_sql(
-                session.query(target_symbol)
+                session.query(_target_symbol)
                 .filter(
-                    target_symbol.timestamp >= testing_period[0],
-                    target_symbol.timestamp <= testing_period[1],
+                    _target_symbol.timestamp >= testing_period[0],
+                    _target_symbol.timestamp <= testing_period[1],
                 )
-                .order_by(target_symbol.timestamp),
-                session.bind(),
+                .order_by(_target_symbol.timestamp)
+                .statement,
+                session.bind,
             )
 
     # Correlated symbols
@@ -99,8 +111,9 @@ def query_to_ts(
                     correlated_symbol.timestamp >= training_period[0],
                     correlated_symbol.timestamp <= training_period[1],
                 )
-                .order_by(correlated_symbol.timestamp),
-                session.bind(),
+                .order_by(correlated_symbol.timestamp)
+                .statement,
+                session.bind,
             )
             for correlated_symbol in correlated_symbols
         ]
@@ -112,8 +125,9 @@ def query_to_ts(
                         correlated_symbol.timestamp >= testing_period[0],
                         correlated_symbol.timestamp <= testing_period[1],
                     )
-                    .order_by(correlated_symbol.timestamp),
-                    session.bind(),
+                    .order_by(correlated_symbol.timestamp)
+                    .statement,
+                    session.bind,
                 )
                 for correlated_symbol in correlated_symbols
             ]
@@ -132,18 +146,21 @@ def query_to_ts(
             for indicator_func in indicator_funcs
         ]
         indicator_funcs = [
-            getattr(indicators, indicator_func.split("_")[0].lower() + f"_tick", None)
+            getattr(indicators, indicator_func.split("_")[0].lower() + f"_tick", None)(
+                Base, indicator_func
+            )
             for indicator_func in indicator_funcs
         ]
         indicator_training = [
             pd.read_sql(
                 session.query(indicator_func)
                 .filter(
-                    indicator_func.time >= training_period[0],
-                    indicator_func.time <= training_period[1],
+                    indicator_func.timestamp >= training_period[0],
+                    indicator_func.timestamp <= training_period[1],
                 )
-                .order_by(indicator_func.time),
-                session.bind(),
+                .order_by(indicator_func.timestamp)
+                .statement,
+                session.bind,
             )
             for indicator_func in indicator_funcs
         ]
@@ -152,11 +169,12 @@ def query_to_ts(
                 pd.read_sql(
                     session.query(indicator_func)
                     .filter(
-                        indicator_func.time >= testing_period[0],
-                        indicator_func.time <= testing_period[1],
+                        indicator_func.timestamp >= testing_period[0],
+                        indicator_func.timestamp <= testing_period[1],
                     )
-                    .order_by(indicator_func.time),
-                    session.bind(),
+                    .order_by(indicator_func.timestamp)
+                    .statement,
+                    session.bind,
                 )
                 for indicator_func in indicator_funcs
             ]
