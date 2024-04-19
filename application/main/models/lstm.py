@@ -15,6 +15,7 @@ def trend_lstm(
     fc_l1: Optional[float] = None,
     fc_activation: str = "tanh",
     dropout: Optional[float] = None,
+    **kwargs,
 ):
     sequence = Sequential()
 
