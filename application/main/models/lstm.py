@@ -33,11 +33,11 @@ def trend_lstm(
         sequence.add(Dropout(dropout))
 
     # Middle lstm layers
-    for lstm_layer in lstm_layers:
+    for index, lstm_layer in enumerate(lstm_layers):
         sequence.add(
             LSTM(
                 units=lstm_layer,
-                return_sequences=True,
+                return_sequences=True if index < len(lstm_layers) - 1 else False,
                 kernel_regularizer=L1(lstm_l1) if lstm_l1 is not None else None,
             )
         )
