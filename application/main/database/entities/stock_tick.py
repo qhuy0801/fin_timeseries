@@ -16,4 +16,5 @@ def stock_tick(Base, table_name):
             high = Column(Float)
             low = Column(Float)
             close = Column(Float)
+            volume = Column(Float)
     return Tick

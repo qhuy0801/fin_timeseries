@@ -31,10 +31,12 @@ def load_stock_ticks(
     output_size: str = "full",
     datatype: str = "csv",
     apikey: str = os.environ["ALPHA_VANTAGE_KEY"],
-    extended_hours: bool = False,
+    adjusted: bool = False,
+    extended_hours: bool = True,
     start_month: str = "2000-01",
     reverse_data: bool = True,
     sleep: float = 0.5,
+    **kwargs,
 ):
     months = month_list(start_month)
 
@@ -60,9 +62,10 @@ def load_stock_ticks(
             "datatype": datatype,
             "interval": interval,
             "apikey": apikey,
-            "extended_hours": "false" if not extended_hours else "true",
+            "extended_hours": "true" if extended_hours is True else "false",
+            "adjusted": "true" if adjusted is True else "false",
             "month": month,
-        }
+        } | kwargs
         response = fetch_data(
             url=url,
             params=params,
@@ -89,6 +92,7 @@ def load_stock_ticks(
                             high=row["high"],
                             low=row["low"],
                             close=row["close"],
+                            volume=row["volume"]
                         )
                         session.add(_tick_)
                     try:
