@@ -13,7 +13,7 @@ from application.main.algo.dynamic import dynamic_processing
 from application.main.database.entities.correlation import Correlation
 from application.main.database.entities.stock_tick import stock_tick
 from application.main.requests.stock_request import get_table_name
-from application.main.utils.timeframe_processing import process_timeframe
+from application.main.utils import process_timeframe
 
 load_dotenv()
 

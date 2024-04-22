@@ -2,7 +2,7 @@ import importlib
 import os
 from datetime import datetime
 
-from typing import Optional, List, Tuple, Generator
+from typing import Optional, List, Tuple, Generator, Dict
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -12,7 +12,8 @@ from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
 from wandb.sdk.wandb_run import Run
 
 from application.main.database.entities.stock_tick import stock_tick
-from application.main.utils.sql_utils import get_table_name
+from application.main.utils import generate_indicator
+from application.main.utils import get_table_name
 
 load_dotenv()
 
@@ -27,7 +28,7 @@ indicators = importlib.import_module(indicators_path)
 model_path = "application.main.models"
 models = importlib.import_module(model_path)
 
-data_processor_path = "application.main.data_processors"
+data_processor_path = "application.main.utils"
 data_processors = importlib.import_module(data_processor_path)
 
 
@@ -37,9 +38,9 @@ def query_to_ts(
     target_symbol: str,
     period: Optional[Tuple[datetime, datetime]],
     correlated_symbols: Optional[List[str]] = None,
-    indicator_funcs: Optional[List[str]] = None,
+    indicator_settings: Optional[Dict[str, Dict[str, int | str]]] = None,
     **kwargs,
-) -> Tuple[pd.DataFrame, List[pd.DataFrame] | None, List[pd.DataFrame] | None]:
+) -> Tuple[pd.DataFrame, pd.DataFrame | None, List[pd.DataFrame] | None]:
     """
     Query the target symbol data, correlated data and technical indicators
     Args:
@@ -48,7 +49,7 @@ def query_to_ts(
         target_symbol (str): The asset symbol
         period (Optional[Tuple[datetime, datetime]]): If None provided then the default is from 2010-01-01 to now
         correlated_symbols (Optional[List[str]]): The assets that have high correlation to the target asset
-        indicator_funcs (Optional[List[str]]): List of indicator which serve the training purpose
+        indicator_settings (Optional[Dict[str, Dict[str, int | str]]]): Specify the indicators
         **kwargs: Other supported parameters for the indicators
 
     Returns:
@@ -64,7 +65,6 @@ def query_to_ts(
     _target_symbol = stock_tick(Base, get_table_name(func, interval, target_symbol))
 
     # Target symbol
-    target_data = None
     with Session() as session:
         target_data = pd.read_sql(
             session.query(_target_symbol)
@@ -76,6 +76,11 @@ def query_to_ts(
             .statement,
             session.bind,
         )
+
+    # Technical indicators
+    indicator_data = None
+    if indicator_settings is not None:
+        indicator_data = generate_indicator(data=target_data, indicator_settings=indicator_settings)
 
     # Correlated symbols
     correlated_data = None
@@ -101,42 +106,10 @@ def query_to_ts(
             for correlated_symbol in correlated_symbols
         ]
 
-    # Technical indicators
-    indicator_data = None
-    if indicator_funcs:
-        indicator_funcs = [
-            get_table_name(
-                func=indicator_func,
-                interval=interval,
-                symbol=target_symbol,
-                **kwargs,
-            )
-            for indicator_func in indicator_funcs
-        ]
-        indicator_funcs = [
-            getattr(indicators, indicator_func.split("_")[0].lower() + f"_tick", None)(
-                Base, indicator_func
-            )
-            for indicator_func in indicator_funcs
-        ]
-        indicator_data = [
-            pd.read_sql(
-                session.query(indicator_func)
-                .filter(
-                    indicator_func.timestamp >= period[0],
-                    indicator_func.timestamp <= period[1],
-                )
-                .order_by(indicator_func.timestamp)
-                .statement,
-                session.bind,
-            )
-            for indicator_func in indicator_funcs
-        ]
-
     return (
         target_data,
-        correlated_data,
         indicator_data,
+        correlated_data,
     )
 
 
@@ -146,8 +119,9 @@ def train(
     target_symbol: str,
     period: Optional[Tuple[datetime, datetime]] = None,
     correlated_symbols: Optional[List[str]] = None,
-    indicator_funcs: Optional[List[str]] = None,
+    indicator_settings: Optional[Dict[str, Dict[str, int | str]]] = None,
     to_generator: bool = False,
+    batch_size: int = 200,
     model_name: str = "trend_lstm",
     sequence_length: int = 60,
     validation_size: Optional[float] = None,
@@ -159,15 +133,15 @@ def train(
     # Query the data
     (
         target_data,
-        correlated_data,
         indicator_data,
+        correlated_data,
     ) = query_to_ts(
         func=func,
         interval=interval,
         target_symbol=target_symbol,
         period=period,
         correlated_symbols=correlated_symbols,
-        indicator_funcs=indicator_funcs,
+        indicator_settings=indicator_settings,
         **kwargs,
     )
 
@@ -216,10 +190,10 @@ def train(
             y=y,
             shuffle=shuffle,
             epochs=epochs,
+            batch_size=batch_size,
             validation_split=validation_size,
             callbacks=[
                 WandbMetricsLogger(),
-                WandbModelCheckpoint("models"),
             ] if wandb_log else None,
         )
 
