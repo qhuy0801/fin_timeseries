@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -10,6 +11,7 @@ from application.main.database.entities.correlation import Correlation
 from application.main.database.entities.stock_symbols import Company
 from application.main.requests.indicators_request import load_indicator_ticks
 from application.main.services.correlation_services import query_and_filter
+from application.main.services.training_services import query_to_ts, train
 
 if __name__ == "__main__":
     # from application.main.database import SessionLocal
@@ -54,19 +56,19 @@ if __name__ == "__main__":
     #             start_month="2010-01",
     #         )
     #
-    load_indicator_ticks(
-        func="BBANDS",
-        symbol="QCOM",
-        interval="15min",
-        start_month="2010-01",
-        time_period="10",
-        series_type="close",
-        nbdevup="1.5",
-        nbdevdn="1.5",
-        fastperiod="12",
-        slowperiod="26",
-        signalperiod="9"
-    )
+    # load_indicator_ticks(
+    #     func="BBANDS",
+    #     symbol="QCOM",
+    #     interval="15min",
+    #     start_month="2010-01",
+    #     time_period="10",
+    #     series_type="close",
+    #     nbdevup="1.5",
+    #     nbdevdn="1.5",
+    #     fastperiod="12",
+    #     slowperiod="26",
+    #     signalperiod="9"
+    # )
     #
     # load_dotenv()
     #
@@ -91,3 +93,32 @@ if __name__ == "__main__":
     #
     # df = query_and_filter("QCOM", function=None, interval=None, sort='abs_asc')
     # print(df)
+
+    date_format = "%Y-%m-%d"
+    train(
+        func="TIME_SERIES_INTRADAY",
+        interval="15min",
+        target_symbol="QCOM",
+        period=(
+            datetime.strptime("2010-01-01", date_format),
+            datetime.strptime("2022-01-01", date_format)
+        ),
+        # testing_period=(
+        #     datetime.strptime("2022-01-01", date_format),
+        #     datetime.now()
+        # ),
+        # testing_period=None,
+        correlated_symbols=None,
+        indicator_settings={
+            "MACD": {"slowperiod": 26},
+            "BBANDS": {"dev": 1.5},
+        },
+        time_period="20",
+        series_type="close",
+        nbdevup="1.5",
+        nbdevdn="1.5",
+        fastperiod="12",
+        slowperiod="26",
+        signalperiod="9",
+        lstm_layers=[128, 64, 32], fc_layers=[16, 8], dropout=0.1
+    )
