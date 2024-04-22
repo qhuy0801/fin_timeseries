@@ -2,6 +2,7 @@ from typing import List, Dict
 
 import pandas as pd
 from pydantic import ValidationError
+from ta.momentum import RSIIndicator
 
 from ta.trend import SMAIndicator as SMA, EMAIndicator as EMA, MACD
 from ta.volatility import BollingerBands as BBANDS
@@ -52,7 +53,7 @@ def generate_indicator(
                 )
                 indicator_values["macd"] = macd.macd()
                 indicator_values["macd_hist"] = macd.macd_diff()
-                indicator_values["macd_signal"]= macd.macd_signal()
+                indicator_values["macd_signal"] = macd.macd_signal()
             elif indicator_name == "BBANDS":
                 bbands = BBANDS(
                     series,
@@ -62,6 +63,8 @@ def generate_indicator(
                 indicator_values['upperband'] = bbands.bollinger_hband()
                 indicator_values['middleband'] = bbands.bollinger_mavg()
                 indicator_values['lowerband'] = bbands.bollinger_lband()
+            elif indicator_name == "RSI":
+                indicator_values["rsi"] = RSIIndicator(series, window=indicator.time_period).rsi()
             else:
                 raise ValueError(f"Unsupported indicator '{indicator_name}'")
         except ValueError as e:

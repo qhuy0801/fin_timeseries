@@ -24,9 +24,14 @@ class BBANDS(BaseModel):
     dev: float = Field(default=1.5)
 
 
+class RSI(BaseModel):
+    time_period: int = Field(default=14)
+
+
 indicator_required_settings = {
     "SMA": SMA,
     "EMA": EMA,
     "MACD": MACD,
-    "BBANDS": BBANDS
+    "BBANDS": BBANDS,
+    "RSI": RSI,
 }
