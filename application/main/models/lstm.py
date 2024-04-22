@@ -3,6 +3,7 @@ from typing import Optional, List
 from keras import Sequential
 from keras.layers import LSTM, BatchNormalization, Dropout, Dense
 from keras.regularizers import L1
+from keras.src.optimizers import Adam, SGD
 
 
 def trend_lstm(
@@ -10,6 +11,7 @@ def trend_lstm(
     feature_count: int = 10,
     feature_extracting_layer: int = 128,
     optimiser: str = "adam",
+    learning_rate: float = 5e-4,
     lstm_layers: Optional[List[int]] = None,
     lstm_l1: Optional[float] = None,
     fc_layers: Optional[List[int]] = None,
@@ -67,6 +69,11 @@ def trend_lstm(
             kernel_regularizer=L1(fc_l1) if lstm_l1 is not None else None,
         )
     )
+
+    if optimiser == "sgd":
+        optimiser = SGD(learning_rate=learning_rate)
+    else:
+        optimiser = Adam(learning_rate=learning_rate)
 
     sequence.compile(optimizer=optimiser, loss="binary_crossentropy", metrics=["accuracy"])
     print(sequence.summary())
