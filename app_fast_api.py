@@ -1,13 +1,15 @@
 import os
 
+import uvicorn
+
 import wandb
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
 
 from application.main.requests.indicators_request import load_indicator_ticks
 from application.main.requests.stock_request import load_stock_ticks
-from application.main.utils.indicator_utils import _indicator_required_settings
-from application.main.utils.logging_config import SweepConfig
+from application.main.utils import indicator_required_settings
+# from application.main.utils import SweepConfig
 
 load_dotenv()
 wandb.login(key=os.environ["WANDB_KEY"])
@@ -54,7 +56,7 @@ async def craw_stock(
 # Crawling (loading service) / Indicators
 @app.post("/craw/indicators/BBANDS/")
 async def craw_indicators(
-    body: _indicator_required_settings.get("BBANDS"),
+    body: indicator_required_settings.get("BBANDS"),
     symbol: str = Query("AAPL", description="Trading symbols such as AAPL, MSFT, etc."),
     interval: str = Query(
         "15min", description="1min, 5min, 15min, 30min, 60min, daily, weekly, monthly"
@@ -76,7 +78,7 @@ async def craw_indicators(
 
 @app.post("/craw/indicators/MACD/")
 async def craw_indicators(
-    body: _indicator_required_settings.get("MACD"),
+    body: indicator_required_settings.get("MACD"),
     symbol: str = Query("AAPL", description="Trading symbols such as AAPL, MSFT, etc."),
     interval: str = Query(
         "15min", description="1min, 5min, 15min, 30min, 60min, daily, weekly, monthly"
@@ -101,3 +103,8 @@ async def craw_indicators(
 # @app.post("/sweep/create/")
 # async def create_sweep(sweep_config: SweepConfig):
 #     return {"message": f"Sweep created {wandb.sweep(sweep_config.dict(), project=sweep_config.project)}!"}
+
+
+# For debugging
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
