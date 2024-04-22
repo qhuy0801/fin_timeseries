@@ -1,5 +1,5 @@
 from typing import Optional
-from .indicator_utils import _indicator_required_settings
+from .indicator_processors.indicator_processor import indicator_required_settings
 
 
 def get_table_name(func: str, interval: Optional[str], symbol: str, **kwargs) -> str:
@@ -10,8 +10,8 @@ def get_table_name(func: str, interval: Optional[str], symbol: str, **kwargs) ->
         base_name = "_".join([func, interval, symbol])
 
     # General handling for any function listed in indicators
-    if func in _indicator_required_settings:
-        Model = _indicator_required_settings[func]  # Retrieve the Pydantic model class
+    if func in indicator_required_settings:
+        Model = indicator_required_settings[func]  # Retrieve the Pydantic model class
         try:
             # Create an instance of the model using kwargs
             model_instance = Model(**kwargs)
