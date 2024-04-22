@@ -9,12 +9,14 @@ def trend_lstm(
     sequence_length: int = 60,
     feature_count: int = 10,
     feature_extracting_layer: int = 128,
+    optimiser: str = "adam",
     lstm_layers: Optional[List[int]] = None,
     lstm_l1: Optional[float] = None,
     fc_layers: Optional[List[int]] = None,
     fc_l1: Optional[float] = None,
     fc_activation: str = "tanh",
-    dropout: Optional[float] = None,
+    lstm_dropout: Optional[float] = None,
+    fc_dropout: Optional[float] = None,
     **kwargs,
 ):
     sequence = Sequential()
@@ -29,8 +31,8 @@ def trend_lstm(
         )
     )
     sequence.add(BatchNormalization())
-    if dropout:
-        sequence.add(Dropout(dropout))
+    if lstm_dropout:
+        sequence.add(Dropout(lstm_dropout))
 
     # Middle lstm layers
     for index, lstm_layer in enumerate(lstm_layers):
@@ -41,8 +43,8 @@ def trend_lstm(
                 kernel_regularizer=L1(lstm_l1) if lstm_l1 is not None else None,
             )
         )
-        if dropout:
-            sequence.add(Dropout(dropout))
+        if lstm_dropout:
+            sequence.add(Dropout(lstm_dropout))
 
     # Middle fully connected layers
     if fc_layers:
@@ -54,8 +56,8 @@ def trend_lstm(
                     activation=fc_activation,
                 )
             )
-            if dropout:
-                sequence.add(Dropout(dropout))
+            if fc_dropout:
+                sequence.add(Dropout(fc_dropout))
 
     # Final output layer
     sequence.add(
@@ -66,7 +68,8 @@ def trend_lstm(
         )
     )
 
-    sequence.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+    sequence.compile(optimizer=optimiser, loss="binary_crossentropy", metrics=["accuracy"])
+    print(sequence.summary())
     return sequence
 
 
