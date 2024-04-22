@@ -2,13 +2,13 @@ from pydantic import BaseModel, Field
 
 
 class SMA(BaseModel):
-    time_period: int
-    series_type: str
+    time_period: int = Field(default=8)
+    series_type: str = Field(default="close")
 
 
 class EMA(BaseModel):
-    time_period: int
-    series_type: str
+    time_period: int = Field(default=9)
+    series_type: str = Field(default="close")
 
 
 class MACD(BaseModel):
@@ -21,11 +21,10 @@ class MACD(BaseModel):
 class BBANDS(BaseModel):
     time_period: int = Field(default=20)
     series_type: str = Field(default="close")
-    nbdevup: float = Field(default=1.5)
-    nbdevdn: float = Field(default=1.5)
+    dev: float = Field(default=1.5)
 
 
-_indicator_required_settings = {
+indicator_required_settings = {
     "SMA": SMA,
     "EMA": EMA,
     "MACD": MACD,
