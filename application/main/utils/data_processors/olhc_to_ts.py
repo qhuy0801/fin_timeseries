@@ -14,6 +14,7 @@ def trend_ts(
     target_field: str = "close",
     sequence_length: int = 60,
     to_generator: bool = True,
+    pct_change: bool = False,
     **kwargs: Any,
 ) -> Union[Generator[Tuple[np.ndarray, np.ndarray], None, None], Tuple[np.ndarray, np.ndarray]]:
     """
@@ -26,6 +27,7 @@ def trend_ts(
         sequence_length:
         to_generator (bool): If true, the output will be an generator, else, it will return 2 numpy array in the format
             (data, label)
+        pct_change:
         **kwargs:
 
     Returns:
@@ -33,6 +35,12 @@ def trend_ts(
         Either an generator that generate tuple(target, label) or 2 numpy array in format (data, label)
 
     """
+    # Apply pct_change
+    if pct_change:
+        exclude = ['timestamp', 'id']
+        cols_to_change = df_target_asset.columns.difference(exclude)
+        df_target_asset[cols_to_change] = df_target_asset[cols_to_change].pct_change()
+
     # Merge indicator datas
     df_target_asset = pd.merge(df_target_asset, df_indicators, left_index=True, right_index=True, how='inner').dropna()
 
