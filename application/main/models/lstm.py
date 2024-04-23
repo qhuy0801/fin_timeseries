@@ -7,11 +7,11 @@ from keras.src.optimizers import Adam, SGD
 
 
 def trend_lstm(
-    sequence_length: int = 60,
     feature_count: int = 10,
+    sequence_length: int = 60,
     feature_extracting_layer: int = 128,
     optimiser: str = "adam",
-    learning_rate: float = 5e-4,
+    learning_rate: float = 1e-4,
     lstm_layers: Optional[List[int]] = None,
     lstm_l1: Optional[float] = None,
     fc_layers: Optional[List[int]] = None,
