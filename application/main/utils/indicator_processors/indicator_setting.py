@@ -25,6 +25,7 @@ class BBANDS(BaseModel):
 
 
 class RSI(BaseModel):
+    series_type: str = Field(default="close")
     time_period: int = Field(default=14)
 
 
