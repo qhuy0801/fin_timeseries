@@ -5,10 +5,12 @@ from datetime import datetime
 from typing import Optional, List, Tuple, Generator, Dict
 
 import pandas as pd
+import wandb
 from dotenv import load_dotenv
+from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
+from wandb.integration.keras import WandbMetricsLogger
 from wandb.sdk.wandb_run import Run
 
 from application.main.database.entities.stock_tick import stock_tick
@@ -185,6 +187,26 @@ def train(
             sequence_length=sequence_length, feature_count=feature_count, **kwargs
         )
 
+        # Training settings
+        callbacks = [
+            ReduceLROnPlateau(
+                monitor="val_accuracy",
+                factor=0.85,
+                patience=3,
+                mode="max",
+                min_delta=0.0005,
+            ),
+            EarlyStopping(
+                monitor="val_accuracy",
+                mode="max",
+                min_delta=0.0005,
+                patience=10,
+            )
+        ]
+
+        if wandb_log:
+            callbacks = callbacks + [WandbMetricsLogger()]
+
         model.fit(
             x=x,
             y=y,
@@ -192,11 +214,9 @@ def train(
             epochs=epochs,
             batch_size=batch_size,
             validation_split=validation_size,
-            callbacks=[
-                WandbMetricsLogger(),
-            ] if wandb_log else None,
+            callbacks=callbacks,
+            verbose=1,
+            validation_freq=1,
         )
-
-        print(model)
 
     return None
