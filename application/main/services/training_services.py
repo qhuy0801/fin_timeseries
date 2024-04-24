@@ -5,9 +5,9 @@ from datetime import datetime
 from typing import Optional, List, Tuple, Generator, Dict
 
 import pandas as pd
-import wandb
 from dotenv import load_dotenv
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
+from sklearn.model_selection import train_test_split
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from wandb.integration.keras import WandbMetricsLogger
@@ -179,6 +179,10 @@ def train(
         x, y = data
         feature_count = x[0].shape[-1]
 
+        # Validation
+        if validation_size is not None:
+            x, x_val, y, y_val = train_test_split(x, y, test_size=validation_size, random_state=42)
+
         # Model object
         model = getattr(models, model_name, None)
         if not model:
@@ -213,7 +217,7 @@ def train(
             shuffle=shuffle,
             epochs=epochs,
             batch_size=batch_size,
-            validation_split=validation_size,
+            validation_data=(x_val, y_val) if validation_size is not None else None,
             callbacks=callbacks,
             verbose=1,
             validation_freq=1,
