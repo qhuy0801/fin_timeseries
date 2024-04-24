@@ -15,8 +15,8 @@ sweep_config = {
     "name": "QCOM_single_BBANDS_MACD",
     "method": "bayes",
     "metric": {
-        "name": "epoch/val_accuracy",
-        "goal": "maximize",
+        "name": "epoch/val_loss",
+        "goal": "minimize",
     },
     "parameters": {
         "sequence_length": {"values": [10, 20, 40, 60]},
@@ -67,12 +67,14 @@ def searching_train(config=None):
         train(
             # General configuration
             func="TIME_SERIES_INTRADAY",
-            interval="5min",
+            interval="30min",
             target_symbol="QCOM",
             period=(
                 datetime.strptime("2019-04-01", date_format),
                 datetime.now(),
             ),
+            # Correlated symbols
+            correlated_symbols=["AAPL", "SPY"],
             # Indicator
             indicator_settings={
                 "MACD": {},

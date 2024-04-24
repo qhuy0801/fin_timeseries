@@ -82,6 +82,6 @@ def trend_ts(
         # Process the data into arrays
         X, Y = [], []
         for i in range(len(x) - sequence_length):
-            X.append(x[i : i + sequence_length])
+            X.append(x[i: i + sequence_length])
             Y.append(y[i + sequence_length - 1])
         return np.array(X), np.array(Y)
