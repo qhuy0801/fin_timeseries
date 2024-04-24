@@ -16,3 +16,4 @@ pydantic
 uvicorn
 wandb
 numpy
+ta
