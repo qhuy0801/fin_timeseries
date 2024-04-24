@@ -167,4 +167,4 @@ data_v2.db
 .idea
 
 # WandB local logs
-.wandb
+wandb
