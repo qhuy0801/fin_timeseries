@@ -51,12 +51,6 @@ def trend_ts(
     else:
         x = process_timeframe([df_target_asset])
 
-    # Apply pct_change
-    if pct_change:
-        exclude = ['timestamp', 'id', "trend"]
-        cols_to_change = df_target_asset.columns.difference(exclude)
-        df_target_asset[cols_to_change] = df_target_asset[cols_to_change].pct_change()
-
     # Gather the y (target)
     y = x[0]["trend"].to_numpy()
 
@@ -64,6 +58,16 @@ def trend_ts(
     x[0].drop(columns=["trend"], inplace=True)
     for df in x[1:]:
         x[0] = pd.merge(x[0], df, left_index=True, right_index=True)
+
+    # Apply pct_change
+    if pct_change:
+        exclude = ['timestamp', 'id', "trend"]
+        cols_to_change = x[0].columns.difference(exclude)
+        x[0][cols_to_change] = x[0][cols_to_change].pct_change()
+
+        # If apply pct_change, remove first row of input and label
+        x[0] = x[0][1:]
+        y = y[1:]
 
     # Convert to numpy
     x = x[0].reset_index(drop=True)
