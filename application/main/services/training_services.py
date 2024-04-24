@@ -190,16 +190,16 @@ def train(
         # Training settings
         callbacks = [
             ReduceLROnPlateau(
-                monitor="val_accuracy",
-                factor=0.85,
+                monitor="val_loss",
+                factor=0.95,
                 patience=3,
                 mode="max",
                 min_delta=0.0005,
             ),
             EarlyStopping(
-                monitor="val_accuracy",
+                monitor="val_loss",
                 mode="max",
-                min_delta=0.0005,
+                min_delta=0.001,
                 patience=10,
             )
         ]

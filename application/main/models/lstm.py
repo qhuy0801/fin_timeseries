@@ -75,7 +75,7 @@ def trend_lstm(
     else:
         optimiser = Adam(learning_rate=learning_rate)
 
-    sequence.compile(optimizer=optimiser, loss="binary_crossentropy", metrics=["accuracy"])
+    sequence.compile(optimizer=optimiser, loss="binary_crossentropy", metrics=["binary_accuracy"])
     print(sequence.summary())
     return sequence
 
