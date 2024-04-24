@@ -83,7 +83,7 @@ def searching_train(config=None):
             batch_size=200,
             model_name="trend_lstm",
             sequence_length=config.sequence_length,
-            validation_size=0.3,
+            validation_size=0.1,
             epochs=20,
             wandb_log=run,
             # Model configuration
