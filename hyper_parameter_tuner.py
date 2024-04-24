@@ -80,7 +80,9 @@ def searching_train(config=None):
             # Indicator
             indicator_settings={"MACD": {}, "BBANDS": {}, "RSI": {}},
             to_generator=False,
+            # Training settings
             batch_size=200,
+            upsampling=True,
             model_name="trend_lstm",
             sequence_length=config.sequence_length,
             validation_size=0.1,

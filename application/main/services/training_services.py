@@ -16,6 +16,7 @@ from wandb.sdk.wandb_run import Run
 from application.main.database.entities.stock_tick import stock_tick
 from application.main.utils import generate_indicator
 from application.main.utils import get_table_name
+from application.main.utils.data_processors.class_balancer import auto_resample
 
 load_dotenv()
 
@@ -124,6 +125,7 @@ def train(
     indicator_settings: Optional[Dict[str, Dict[str, int | str]]] = None,
     to_generator: bool = False,
     batch_size: int = 200,
+    upsampling: Optional[bool] = None,
     model_name: str = "trend_lstm",
     sequence_length: int = 60,
     validation_size: Optional[float] = None,
@@ -182,6 +184,10 @@ def train(
         # Validation
         if validation_size is not None:
             x, x_val, y, y_val = train_test_split(x, y, test_size=validation_size, random_state=42)
+
+        # Up-sampling if needed
+        if upsampling is not None:
+            x, y = auto_resample(x=x, y=y, upsample=upsampling)
 
         # Model object
         model = getattr(models, model_name, None)
