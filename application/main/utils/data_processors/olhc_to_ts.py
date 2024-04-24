@@ -36,7 +36,7 @@ def trend_ts(
 
     """
     # Merge indicator datas
-    if df_indicators:
+    if df_indicators is not None:
         df_target_asset = pd.merge(df_target_asset, df_indicators, left_index=True, right_index=True, how='inner').dropna()
 
     # Get the trend target (long/short)
