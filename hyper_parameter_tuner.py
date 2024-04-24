@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     # Use Sweep to perform hyper-parameter tuning
     wandb.agent(
-        sweep_id="8704e1z0",
+        sweep_id="tthsme5k",
         project="fin_timeseries",
         function=searching_train,
         count=20,
