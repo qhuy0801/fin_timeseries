@@ -161,6 +161,7 @@ cython_debug/
 
 # SQLite
 data.db
+data_v2.db
 
 PyCharm idea
 .idea
