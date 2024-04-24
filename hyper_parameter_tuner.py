@@ -15,13 +15,14 @@ sweep_config = {
     "name": "QCOM_30min",
     "method": "bayes",
     "metric": {
-        "name": "epoch/val_loss",
-        "goal": "minimize",
+        "name": "epoch/val_binary_accuracy",
+        "goal": "maximize",
     },
     "parameters": {
         "sequence_length": {"values": [10, 20, 40, 60]},
         "feature_extracting_layer": {"values": [64, 32, 16]},
         "optimiser": {"values": ["adam", "sgd"]},
+        "learning_rate": {"distribution": "uniform", "min": 5e-6, "max": 1e-4},
         "correlated_symbols": {"values": [None, ["AAPL"], ["SPY"], ["SPY", "AAPL"]]},
         "lstm_layers": {
             "values": [
@@ -86,8 +87,9 @@ def searching_train(config=None):
             epochs=20,
             wandb_log=run,
             # Model configuration
-            feature_extracting_layer=config.feature_extracting_layer,
             optimiser=config.optimiser,
+            learning_rate=config.learning_rate,
+            feature_extracting_layer=config.feature_extracting_layer,
             lstm_layers=config.lstm_layers,
             lstm_l1=config.lstm_l1,
             fc_layers=config.fc_layers,
