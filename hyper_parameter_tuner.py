@@ -12,7 +12,7 @@ wandb.login(key=os.environ["WANDB_KEY"])
 
 sweep_config = {
     "project": "fin_timeseries",
-    "name": "QCOM_single_BBANDS_MACD",
+    "name": "QCOM_30min",
     "method": "bayes",
     "metric": {
         "name": "epoch/val_loss",
@@ -22,6 +22,7 @@ sweep_config = {
         "sequence_length": {"values": [10, 20, 40, 60]},
         "feature_extracting_layer": {"values": [64, 32, 16]},
         "optimiser": {"values": ["adam", "sgd"]},
+        "correlated_symbols": {"values": [None, ["AAPL"], ["SPY"], ["SPY", "AAPL"]]},
         "lstm_layers": {
             "values": [
                 [64, 64, 64],
@@ -70,17 +71,13 @@ def searching_train(config=None):
             interval="30min",
             target_symbol="QCOM",
             period=(
-                datetime.strptime("2019-04-01", date_format),
+                datetime.strptime("2014-04-01", date_format),
                 datetime.now(),
             ),
             # Correlated symbols
-            correlated_symbols=["AAPL", "SPY"],
+            correlated_symbols=config.correlated_symbols,
             # Indicator
-            indicator_settings={
-                "MACD": {},
-                "BBANDS": {},
-                "RSI": {}
-            },
+            indicator_settings={"MACD": {}, "BBANDS": {}, "RSI": {}},
             to_generator=False,
             batch_size=200,
             model_name="trend_lstm",
@@ -107,5 +104,8 @@ if __name__ == "__main__":
 
     # Use Sweep to perform hyper-parameter tuning
     wandb.agent(
-        sweep_id="blp1h38i", project="fin_timeseries", function=searching_train, count=20
+        sweep_id="8704e1z0",
+        project="fin_timeseries",
+        function=searching_train,
+        count=20,
     )
