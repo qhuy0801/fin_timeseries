@@ -215,8 +215,8 @@ def train(
             EarlyStopping(
                 monitor="val_loss",
                 mode="max",
-                min_delta=0.001,
-                patience=10,
+                min_delta=0.0001,
+                patience=15,
             ),
         ]
 
