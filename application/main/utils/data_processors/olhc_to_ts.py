@@ -15,8 +15,11 @@ def trend_ts(
     sequence_length: int = 60,
     to_generator: bool = True,
     pct_change: bool = True,
+    get_return: bool = False,
     **kwargs: Any,
-) -> Union[Generator[Tuple[np.ndarray, np.ndarray], None, None], Tuple[np.ndarray, np.ndarray]]:
+) -> Union[
+    Generator[Tuple[np.ndarray, np.ndarray], None, None], Tuple[np.ndarray, np.ndarray]
+]:
     """
     Combine all dataframe into one time series
     Args:
@@ -28,6 +31,7 @@ def trend_ts(
         to_generator (bool): If true, the output will be an generator, else, it will return 2 numpy array in the format
             (data, label)
         pct_change:
+        get_return:
         **kwargs:
 
     Returns:
@@ -37,13 +41,24 @@ def trend_ts(
     """
     # Merge indicator datas
     if df_indicators is not None:
-        df_target_asset = pd.merge(df_target_asset, df_indicators, left_index=True, right_index=True, how='inner').dropna()
+        df_target_asset = pd.merge(
+            df_target_asset,
+            df_indicators,
+            left_index=True,
+            right_index=True,
+            how="inner",
+        )
 
     # Get the trend target (long/short)
     df_target_asset["trend"] = (
         df_target_asset[target_field] <= df_target_asset[target_field].shift(-1)
     ).astype(int)
-    df_target_asset = df_target_asset[:-1]
+
+    # Get the return
+    if get_return:
+        df_target_asset["return"] = df_target_asset[target_field].pct_change().shift(-1)
+
+    df_target_asset = df_target_asset[:-1].dropna()
 
     # Crop and match the timestamp
     if df_correlated_asset is not None:
@@ -55,14 +70,22 @@ def trend_ts(
     # Gather the y (target)
     y = x[0]["trend"].to_numpy()
 
-    # Drop the target and merge all
+    # Gather z (return) if required
+    if get_return:
+        z = x[0]["return"].to_numpy()
+
+    # Drop the target and returns and merge all
     x[0].drop(columns=["trend"], inplace=True)
+
+    if get_return:
+        x[0].drop(columns=["return"], inplace=True)
+
     for df in x[1:]:
         x[0] = pd.merge(x[0], df, left_index=True, right_index=True)
 
     # Apply pct_change
     if pct_change:
-        exclude = ['timestamp', 'id', "trend"]
+        exclude = ["timestamp", "id", "trend"]
         cols_to_change = x[0].columns.difference(exclude)
         x[0][cols_to_change] = x[0][cols_to_change].pct_change()
 
@@ -80,13 +103,27 @@ def trend_ts(
     if to_generator:
         # Generator expression
         return (
-            (x[i : i + sequence_length], y[i + sequence_length - 1])
+            (
+                x[i : i + sequence_length],
+                y[i + sequence_length - 1],
+                z[i + sequence_length - 1],
+            )
+            if get_return
+            else (x[i : i + sequence_length], y[i + sequence_length - 1])
             for i in range(len(x) - sequence_length)
         )
     else:
         # Process the data into arrays
         X, Y = [], []
+        if get_return:
+            Z = []
         for i in range(len(x) - sequence_length):
-            X.append(x[i: i + sequence_length])
+            X.append(x[i : i + sequence_length])
             Y.append(y[i + sequence_length - 1])
-        return np.array(X), np.array(Y)
+            if get_return:
+                Z.append(z[i + sequence_length - 1])
+        return (
+            (np.array(X), np.array(Y), np.array(Z))
+            if get_return
+            else (np.array(X), np.array(Y))
+        )
