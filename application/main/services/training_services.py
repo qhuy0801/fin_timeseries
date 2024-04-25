@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional, List, Tuple, Generator, Dict
 
 import pandas as pd
+import wandb
 from dotenv import load_dotenv
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from sklearn.model_selection import train_test_split
@@ -83,7 +84,9 @@ def query_to_ts(
     # Technical indicators
     indicator_data = None
     if indicator_settings is not None:
-        indicator_data = generate_indicator(data=target_data, indicator_settings=indicator_settings)
+        indicator_data = generate_indicator(
+            data=target_data, indicator_settings=indicator_settings
+        )
 
     # Correlated symbols
     correlated_data = None
@@ -132,6 +135,7 @@ def train(
     shuffle: bool = True,
     epochs: int = 10,
     wandb_log: Optional[Run] = None,
+    model_registry_name: Optional[str] = None,
     **kwargs,
 ):
     # Query the data
@@ -183,7 +187,9 @@ def train(
 
         # Validation
         if validation_size is not None:
-            x, x_val, y, y_val = train_test_split(x, y, test_size=validation_size, random_state=42)
+            x, x_val, y, y_val = train_test_split(
+                x, y, test_size=validation_size, random_state=42
+            )
 
         # Up-sampling if needed
         if upsampling is not None:
@@ -211,11 +217,13 @@ def train(
                 mode="max",
                 min_delta=0.001,
                 patience=10,
-            )
+            ),
         ]
 
         if wandb_log:
-            callbacks = callbacks + [WandbMetricsLogger()]
+            callbacks = callbacks + [
+                WandbMetricsLogger(),
+            ]
 
         model.fit(
             x=x,
@@ -228,5 +236,17 @@ def train(
             verbose=1,
             validation_freq=1,
         )
+
+        # Saving and logging model to cloud
+        _model_path = f"{wandb_log.name if wandb_log is not None else 'model'}.keras"
+        model.save(_model_path)
+
+        if wandb_log is not None:
+            artifact = wandb.Artifact(name=f"{wandb_log.name}_model_ckpt", type="model")
+            artifact.add_file(local_path=_model_path)
+            wandb_log.log_artifact(artifact)
+
+            if model_registry_name is not None:
+                wandb_log.link_model(path=_model_path, registered_model_name=model_registry_name)
 
     return None
