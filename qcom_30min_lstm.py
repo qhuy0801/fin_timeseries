@@ -101,15 +101,60 @@ def searching_train(config=None):
             fc_dropout=config.fc_dropout,
         )
 
+def tuning_train():
+
+    # Date formatting
+    date_format = "%Y-%m-%d"
+
+    # Run
+    with wandb.init(project="fin_timeseries") as run:
+        train(
+            # General configuration
+            func="TIME_SERIES_INTRADAY",
+            interval="30min",
+            target_symbol="QCOM",
+            period=(
+                datetime.strptime("2018-10-01", date_format),
+                datetime.now(),
+            ),
+            # Correlated symbols
+            correlated_symbols=["AAPL"],
+            # Indicator
+            indicator_settings={"MACD": {}, "BBANDS": {}, "RSI": {}},
+            to_generator=False,
+            # Training settings
+            batch_size=200,
+            upsampling=True,
+            model_name="trend_lstm",
+            sequence_length=60,
+            validation_size=None,
+            epochs=200,
+            wandb_log=run,
+            # Model configuration
+            optimiser="adam",
+            learning_rate=4e-5,
+            feature_extracting_layer=64,
+            lstm_layers=[64, 32],
+            lstm_l1=None,
+            fc_layers=[32, 32],
+            fc_l1=0.02,
+            fc_activation="sigmoid",
+            lstm_dropout=0.1,
+            fc_dropout=0.4,
+        )
+
 
 if __name__ == "__main__":
     # Create the sweep
     # wandb.sweep(sweep_config, project="fin_timeseries")
 
     # Use Sweep to perform hyper-parameter tuning
-    wandb.agent(
-        sweep_id="tthsme5k",
-        project="fin_timeseries",
-        function=searching_train,
-        count=20,
-    )
+    # wandb.agent(
+    #     sweep_id="ckq012aq",
+    #     project="fin_timeseries",
+    #     function=searching_train,
+    #     count=20,
+    # )
+
+    # Tuning train
+    tuning_train()
