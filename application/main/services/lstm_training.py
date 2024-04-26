@@ -283,6 +283,7 @@ def inferent(
     correlated_symbols: Optional[List[str]] = None,
     indicator_settings: Optional[Dict[str, Dict[str, int | str]]] = None,
     sequence_length: int = 60,
+    return_target_df: bool = True,
     **kwargs,
 ):
     # Load the model
@@ -325,4 +326,6 @@ def inferent(
     y_pred = model.predict(x, batch_size=200)
     y_pred = np.squeeze(y_pred)
 
+    if return_target_df:
+        return timestamp, y, y_pred, target_data
     return timestamp, y, y_pred

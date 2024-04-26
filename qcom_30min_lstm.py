@@ -108,7 +108,7 @@ def tuning_train():
 
     # Run
     with wandb.init(project="fin_timeseries") as run:
-        train(
+        return train(
             # General configuration
             func="TIME_SERIES_INTRADAY",
             interval="30min",
@@ -145,7 +145,9 @@ def tuning_train():
         )
 
 
-def inferent_process(artifact_path: str = "artifact", artifact_name: str = "vivid-snowflake-276_ckpt:v0"):
+def inferent_process(
+    artifact_path: str = "artifact", artifact_name: str = "driven-glade-282_ckpt:v0"
+):
     # Date formatting
     date_format = "%Y-%m-%d"
 
@@ -157,10 +159,10 @@ def inferent_process(artifact_path: str = "artifact", artifact_name: str = "vivi
     )
     artifact.download(artifact_path)
 
-    model_path = f"model.keras"
+    model_path = f"{artifact_path}/model.keras"
     scaler_path = f"{artifact_path}/scaler.save"
 
-    inferent(
+    timestamp, y, y_pred = inferent(
         func="TIME_SERIES_INTRADAY",
         interval="30min",
         target_symbol="QCOM",
@@ -179,8 +181,6 @@ def inferent_process(artifact_path: str = "artifact", artifact_name: str = "vivi
         scaler_path=scaler_path,
     )
 
-    print(scaler_path)
-
 
 if __name__ == "__main__":
     # Create the sweep
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     # )
 
     # Tuning train
-    tuning_train()
+    _artifact_name = tuning_train()
 
     # Inferent
-    # inferent_process()
+    inferent_process(artifact_name=_artifact_name)
