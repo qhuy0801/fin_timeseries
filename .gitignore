@@ -168,3 +168,6 @@ data_v2.db
 
 # WandB local logs
 wandb
+
+# Test files
+test.py
