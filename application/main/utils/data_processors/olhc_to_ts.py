@@ -15,7 +15,7 @@ def trend_ts(
     df_indicators: Optional[pd.DataFrame] = None,
     target_field: str = "close",
     sequence_length: int = 60,
-    to_generator: bool = True,
+    to_generator: bool = False,
     pct_change: bool = True,
     scaler_path: Optional[str] = None,
     **kwargs: Any,
