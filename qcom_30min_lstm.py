@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 
+import pandas as pd
+
 import wandb
 from dotenv import load_dotenv
 
@@ -162,7 +164,7 @@ def inferent_process(
     model_path = f"{artifact_path}/model.keras"
     scaler_path = f"{artifact_path}/scaler.save"
 
-    timestamp, y, y_pred = inferent(
+    timestamp, y, y_pred, org_df = inferent(
         func="TIME_SERIES_INTRADAY",
         interval="30min",
         target_symbol="QCOM",
@@ -181,6 +183,15 @@ def inferent_process(
         scaler_path=scaler_path,
     )
 
+    result_df = pd.DataFrame({
+        "timestamp": timestamp,
+        "y": y,
+        "y_pred": y_pred,
+    })
+
+    result_df.to_csv("qcom_30mins_lstm_result.csv", index=False)
+    org_df.to_csv("qcom_30mins_lstm_org.csv", index=False)
+
 
 if __name__ == "__main__":
     # Create the sweep
@@ -195,7 +206,7 @@ if __name__ == "__main__":
     # )
 
     # Tuning train
-    _artifact_name = tuning_train()
+    # _artifact_name = tuning_train()
 
     # Inferent
-    inferent_process(artifact_name=_artifact_name)
+    inferent_process()
