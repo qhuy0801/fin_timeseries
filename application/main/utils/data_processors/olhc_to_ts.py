@@ -1,5 +1,6 @@
 from typing import Optional, List, Any, Union, Generator, Tuple
 
+import joblib
 import numpy as np
 import pandas as pd
 from numpy import ndarray
@@ -16,6 +17,7 @@ def trend_ts(
     sequence_length: int = 60,
     to_generator: bool = True,
     pct_change: bool = True,
+    scaler_path: Optional[str] = None,
     **kwargs: Any,
 ) -> (
     tuple[Generator[tuple[Any, Any, Any], Any, None], StandardScaler]
@@ -32,6 +34,7 @@ def trend_ts(
         to_generator (bool): If true, the output will be an generator, else, it will return 2 numpy array in the format
             (data, label)
         pct_change:
+        scaler_path: If not None, the scaler will load the weight from previously trained scaler
         **kwargs:
 
     Returns:
@@ -87,6 +90,8 @@ def trend_ts(
 
     # Gather the x
     scaler = StandardScaler()
+    if scaler_path is not None:
+        scaler = joblib.load(scaler_path)
     x[x.columns] = scaler.fit_transform(x[x.columns])
     x = x.to_numpy()
 
