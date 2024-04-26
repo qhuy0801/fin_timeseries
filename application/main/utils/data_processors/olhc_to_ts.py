@@ -2,6 +2,7 @@ from typing import Optional, List, Any, Union, Generator, Tuple
 
 import numpy as np
 import pandas as pd
+from numpy import ndarray
 from sklearn.preprocessing import StandardScaler
 
 from .timeframe_processing import process_timeframe
@@ -15,11 +16,8 @@ def trend_ts(
     sequence_length: int = 60,
     to_generator: bool = True,
     pct_change: bool = True,
-    get_return: bool = False,
     **kwargs: Any,
-) -> Union[
-    Generator[Tuple[np.ndarray, np.ndarray], None, None], Tuple[np.ndarray, np.ndarray]
-]:
+) -> Generator[tuple[Any, Any, Any], Any, None] | tuple[ndarray, ndarray, ndarray]:
     """
     Combine all dataframe into one time series
     Args:
@@ -31,7 +29,6 @@ def trend_ts(
         to_generator (bool): If true, the output will be an generator, else, it will return 2 numpy array in the format
             (data, label)
         pct_change:
-        get_return:
         **kwargs:
 
     Returns:
@@ -53,11 +50,6 @@ def trend_ts(
     df_target_asset["trend"] = (
         df_target_asset[target_field] <= df_target_asset[target_field].shift(-1)
     ).astype(int)
-
-    # Get the return
-    if get_return:
-        df_target_asset["return"] = df_target_asset[target_field].pct_change().shift(-1)
-
     df_target_asset = df_target_asset[:-1].dropna()
 
     # Crop and match the timestamp
@@ -69,17 +61,10 @@ def trend_ts(
 
     # Gather the y (target)
     y = x[0]["trend"].to_numpy()
+    time = x[0].index.to_numpy()
 
-    # Gather z (return) if required
-    if get_return:
-        z = x[0]["return"].to_numpy()
-
-    # Drop the target and returns and merge all
+    # Drop the target and merge all
     x[0].drop(columns=["trend"], inplace=True)
-
-    if get_return:
-        x[0].drop(columns=["return"], inplace=True)
-
     for df in x[1:]:
         x[0] = pd.merge(x[0], df, left_index=True, right_index=True)
 
@@ -92,6 +77,7 @@ def trend_ts(
         # If apply pct_change, remove first row of input and label
         x[0] = x[0][1:]
         y = y[1:]
+        time = time[1:]
 
     # Convert to numpy
     x = x[0].reset_index(drop=True)
@@ -104,26 +90,16 @@ def trend_ts(
         # Generator expression
         return (
             (
-                x[i : i + sequence_length],
+                time[i + sequence_length - 1],
+                x[i: i + sequence_length],
                 y[i + sequence_length - 1],
-                z[i + sequence_length - 1],
             )
-            if get_return
-            else (x[i : i + sequence_length], y[i + sequence_length - 1])
             for i in range(len(x) - sequence_length)
         )
     else:
         # Process the data into arrays
         X, Y = [], []
-        if get_return:
-            Z = []
-        for i in range(len(x) - sequence_length):
-            X.append(x[i : i + sequence_length])
+        for i in range(len(x) - sequence_length + 1):
+            X.append(x[i: i + sequence_length])
             Y.append(y[i + sequence_length - 1])
-            if get_return:
-                Z.append(z[i + sequence_length - 1])
-        return (
-            (np.array(X), np.array(Y), np.array(Z))
-            if get_return
-            else (np.array(X), np.array(Y))
-        )
+        return time[sequence_length - 1:], np.array(X), np.array(Y)
