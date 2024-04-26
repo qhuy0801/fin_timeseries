@@ -8,7 +8,9 @@ import joblib
 import pandas as pd
 import wandb
 from dotenv import load_dotenv
+from keras import Model
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
+from keras.src.saving import load_model
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sqlalchemy import create_engine
@@ -31,8 +33,8 @@ Base = declarative_base()
 indicators_path = "application.main.database.entities.indicators"
 indicators = importlib.import_module(indicators_path)
 
-model_path = "application.main.models"
-models = importlib.import_module(model_path)
+models_path = "application.main.models"
+models = importlib.import_module(models_path)
 
 data_processor_path = "application.main.utils"
 data_processors = importlib.import_module(data_processor_path)
@@ -215,7 +217,7 @@ def train(
                 min_delta=0.0005,
             ),
             EarlyStopping(
-                monitor="val_loss",
+                monitor="val_loss" if validation_size is not None else "loss",
                 mode="max",
                 min_delta=0.0001,
                 patience=15,
@@ -251,13 +253,74 @@ def train(
 
             # Add scaler
             if isinstance(scaler, StandardScaler):
-                scaler_path = f"{wandb_log.name if wandb_log is not None else ''}_scaler.save"
+                scaler_path = (
+                    f"{wandb_log.name if wandb_log is not None else ''}_scaler.save"
+                )
                 joblib.dump(value=scaler, filename=scaler_path)
                 artifact.add_file(local_path=scaler_path)
 
             wandb_log.log_artifact(artifact)
 
             if model_registry_name is not None:
-                wandb_log.link_model(path=_model_path, registered_model_name=model_registry_name)
+                wandb_log.link_model(
+                    path=_model_path, registered_model_name=model_registry_name
+                )
+
+
+def inferent(
+    func: str,
+    interval: str,
+    target_symbol: str,
+    model_path: str,
+    model_name: str,
+    scaler_path: str,
+    period: Optional[Tuple[datetime, datetime]] = None,
+    correlated_symbols: Optional[List[str]] = None,
+    indicator_settings: Optional[Dict[str, Dict[str, int | str]]] = None,
+    batch_size: int = 200,
+    sequence_length: int = 60,
+    wandb_log: Optional[Run] = None,
+    model_registry_name: Optional[str] = None,
+    **kwargs,
+):
+    # Load the model
+    model = load_model(model_path, compile=False)
+
+    # Query the data
+    (
+        target_data,
+        indicator_data,
+        correlated_data,
+    ) = query_to_ts(
+        func=func,
+        interval=interval,
+        target_symbol=target_symbol,
+        period=period,
+        correlated_symbols=correlated_symbols,
+        indicator_settings=indicator_settings,
+        **kwargs,
+    )
+
+    # Get the data processor
+    data_processor = getattr(data_processors, f"{model_name.split('_')[0]}_ts", None)
+    if not data_processor:
+        raise ValueError(f"Processor {model_name.split('_')[0]}_ts not found!.")
+
+    # Use the processor to process the data
+    data = data_processor(
+        df_target_asset=target_data,
+        df_correlated_asset=correlated_data,
+        df_indicators=indicator_data,
+        sequence_length=sequence_length,
+        scaler_path=scaler_path,
+        **kwargs,
+    )
+
+    # Unpact the data
+    timestamp, x, y, _ = data
+
+    for _timestamp, _x, _y in zip(timestamp, x, y):
+        _y_pred = model(x, training=False)
+
 
     return None
