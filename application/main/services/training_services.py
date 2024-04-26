@@ -182,7 +182,7 @@ def train(
         # TODO: start the training with generator
     else:
         # Training with numpy arrays
-        x, y = data
+        _, x, y = data
         feature_count = x[0].shape[-1]
 
         # Validation
