@@ -1,9 +1,9 @@
 from typing import Optional, List
 
 from keras import Sequential
-from keras.layers import LSTM, BatchNormalization, Dropout, Dense
-from keras.regularizers import L1
+from keras.src.layers import LSTM, BatchNormalization, Dropout, Dense
 from keras.src.optimizers import Adam, SGD
+from keras.src.regularizers import L1
 
 
 def trend_lstm(
