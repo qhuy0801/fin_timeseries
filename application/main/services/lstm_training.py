@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional, List, Tuple, Generator, Dict
 
 import joblib
+import numpy as np
 import pandas as pd
 import wandb
 from dotenv import load_dotenv
@@ -244,9 +245,11 @@ def train(
         _model_path = f"model.keras"
         model.save(_model_path)
 
+        artifact_name = None
         if wandb_log is not None:
+            artifact_name = f"{wandb_log.name}_ckpt"
             artifact = wandb.Artifact(
-                name=f"{wandb_log.name}_ckpt", type="model_n_scaler"
+                name=artifact_name, type="model_n_scaler"
             )
 
             # Add model
@@ -265,6 +268,8 @@ def train(
                 wandb_log.link_model(
                     path=_model_path, registered_model_name=model_registry_name
                 )
+
+    return artifact_name
 
 
 def inferent(
@@ -316,17 +321,8 @@ def inferent(
     # Unpact the data
     timestamp, x, y, _ = data
 
-    # Get empty dataframe to store the prediction
-    result_table = []
+    # Predict and get the
+    y_pred = model.predict(x, batch_size=200)
+    y_pred = np.squeeze(y_pred)
 
-    for _timestamp, _x, _y in zip(timestamp, x, y):
-        [_y_pred] = model([x], training=False)
-        _data = {
-            "timestamp": _timestamp,
-            "predicted_prob": _y_pred,
-            "ground_truth": _y,
-        }
-        result_table.append(_data)
-    result_table = pd.DataFrame(result_table)
-
-    return result_table
+    return timestamp, y, y_pred
