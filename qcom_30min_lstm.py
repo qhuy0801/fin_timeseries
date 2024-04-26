@@ -127,7 +127,7 @@ def tuning_train():
             upsampling=True,
             model_name="trend_lstm",
             sequence_length=60,
-            validation_size=None,
+            validation_size=0.05,
             epochs=200,
             wandb_log=run,
             # Model configuration
