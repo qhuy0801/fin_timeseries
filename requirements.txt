@@ -2,8 +2,9 @@ cutelog
 python-dotenv
 pandas
 fastapi
-tensorflow
-keras
+tensorflow==2.16.1
+keras==3.3.2
+pillow==10.3.0
 sqlalchemy
 requests
 tqdm

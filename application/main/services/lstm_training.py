@@ -9,11 +9,11 @@ import pandas as pd
 import wandb
 from dotenv import load_dotenv
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
+from keras.src.saving import load_model
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from tensorflow.python.keras.saving.save import load_model
 from wandb.integration.keras import WandbMetricsLogger
 from wandb.sdk.wandb_run import Run
 
