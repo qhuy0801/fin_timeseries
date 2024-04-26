@@ -4,7 +4,7 @@ from datetime import datetime
 import wandb
 from dotenv import load_dotenv
 
-from application.main.services.training_services import train
+from application.main.services.lstm_training import train
 
 load_dotenv()
 wandb.login(key=os.environ["WANDB_KEY"])
