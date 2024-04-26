@@ -4,11 +4,13 @@ from datetime import datetime
 
 from typing import Optional, List, Tuple, Generator, Dict
 
+import joblib
 import pandas as pd
 import wandb
 from dotenv import load_dotenv
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from wandb.integration.keras import WandbMetricsLogger
@@ -182,7 +184,7 @@ def train(
         # TODO: start the training with generator
     else:
         # Training with numpy arrays
-        _, x, y = data
+        _, x, y, scaler = data
         feature_count = x[0].shape[-1]
 
         # Validation
@@ -206,7 +208,7 @@ def train(
         # Training settings
         callbacks = [
             ReduceLROnPlateau(
-                monitor="val_loss",
+                monitor="val_loss" if validation_size is not None else "loss",
                 factor=0.95,
                 patience=3,
                 mode="max",
@@ -243,7 +245,16 @@ def train(
 
         if wandb_log is not None:
             artifact = wandb.Artifact(name=f"{wandb_log.name}_model_ckpt", type="model")
+
+            # Add model
             artifact.add_file(local_path=_model_path)
+
+            # Add scaler
+            if isinstance(scaler, StandardScaler):
+                scaler_path = f"{wandb_log.name if wandb_log is not None else ''}_scaler.save"
+                joblib.dump(value=scaler, filename=scaler_path)
+                artifact.add_file(local_path=scaler_path)
+
             wandb_log.log_artifact(artifact)
 
             if model_registry_name is not None:
