@@ -219,7 +219,7 @@ def train(
                 monitor="val_loss" if validation_size is not None else "loss",
                 mode="max",
                 min_delta=0.0001,
-                patience=30,
+                patience=100,
             ),
         ]
 
@@ -245,21 +245,23 @@ def train(
         model.save(_model_path)
 
         if wandb_log is not None:
-            artifact = wandb.Artifact(name=f"{wandb_log.name}_model_ckpt", type="model")
+            model_artifact = wandb.Artifact(name=f"{wandb_log.name}_model_ckpt", type="model")
 
             # Add model
-            artifact.add_file(local_path=_model_path)
+            model_artifact.add_file(local_path=_model_path)
+            wandb_log.log_artifact(model_artifact)
 
             # Add scaler
             if isinstance(scaler, StandardScaler):
+                scaler_artifact = wandb.Artifact(name=f"{wandb_log.name}_scaler_weights", type="scaler")
                 scaler_path = (
                     f"{wandb_log.name if wandb_log is not None else ''}_scaler.save"
                 )
                 joblib.dump(value=scaler, filename=scaler_path)
-                artifact.add_file(local_path=scaler_path)
+                scaler_artifact.add_file(local_path=scaler_path)
+                wandb_log.log_artifact(scaler_artifact)
 
-            wandb_log.log_artifact(artifact)
-
+            # Link model to registry
             if model_registry_name is not None:
                 wandb_log.link_model(
                     path=_model_path, registered_model_name=model_registry_name

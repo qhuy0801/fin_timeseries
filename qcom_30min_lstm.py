@@ -141,6 +141,7 @@ def tuning_train():
             fc_activation="sigmoid",
             lstm_dropout=0.1,
             fc_dropout=0.4,
+            model_registry_name="qcom_30mins_lstm"
         )
 
 
