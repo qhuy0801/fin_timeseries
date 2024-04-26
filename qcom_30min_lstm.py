@@ -101,6 +101,7 @@ def searching_train(config=None):
             fc_dropout=config.fc_dropout,
         )
 
+
 def tuning_train():
 
     # Date formatting
@@ -145,6 +146,24 @@ def tuning_train():
         )
 
 
+def inferent(registered_model_name: str = "qcom_30mins_lstm", version: str = "v0"):
+    # Date formatting
+    date_format = "%Y-%m-%d"
+
+    # Run
+    with wandb.init(project="fin_timeseries", entity="qhuy0168") as run:
+
+        # Download the model
+        api = wandb.Api()
+        artifact = api.artifact(f'{os.environ["WANDB_ENTITY"]}/model-registry/{registered_model_name}:{version}', type='model')
+        artifact.download("model")
+
+        # Download the scaler
+        scaler_artifact = run.use_artifact(artifact_or_name="vocal-oath-259_scaler_weights:v0")
+
+        print(scaler_artifact)
+
+
 if __name__ == "__main__":
     # Create the sweep
     # wandb.sweep(sweep_config, project="fin_timeseries")
@@ -159,3 +178,7 @@ if __name__ == "__main__":
 
     # Tuning train
     tuning_train()
+
+    # Inferent
+    # inferent()
+
