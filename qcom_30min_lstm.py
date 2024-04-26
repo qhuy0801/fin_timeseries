@@ -4,7 +4,7 @@ from datetime import datetime
 import wandb
 from dotenv import load_dotenv
 
-from application.main.services.lstm_training import train
+from application.main.services.lstm_training import train, inferent
 
 load_dotenv()
 wandb.login(key=os.environ["WANDB_KEY"])
@@ -103,7 +103,6 @@ def searching_train(config=None):
 
 
 def tuning_train():
-
     # Date formatting
     date_format = "%Y-%m-%d"
 
@@ -128,7 +127,7 @@ def tuning_train():
             upsampling=True,
             model_name="trend_lstm",
             sequence_length=60,
-            validation_size=0.05,
+            validation_size=0.15,
             epochs=200,
             wandb_log=run,
             # Model configuration
@@ -142,26 +141,45 @@ def tuning_train():
             fc_activation="sigmoid",
             lstm_dropout=0.1,
             fc_dropout=0.4,
-            model_registry_name="qcom_30mins_lstm"
+            model_registry_name="qcom_30mins_lstm",
         )
 
 
-def inferent(registered_model_name: str = "qcom_30mins_lstm", version: str = "v0"):
+def inferent_process(artifact_path: str = "artifact", artifact_name: str = "vivid-snowflake-276_ckpt:v0"):
     # Date formatting
     date_format = "%Y-%m-%d"
 
-    # Run
-    with wandb.init(project="fin_timeseries", entity="qhuy0168") as run:
+    # Download the model
+    api = wandb.Api()
+    artifact = api.artifact(
+        f'{os.environ["WANDB_ENTITY"]}/fin_timeseries/{artifact_name}',
+        type="model_n_scaler",
+    )
+    artifact.download(artifact_path)
 
-        # Download the model
-        api = wandb.Api()
-        artifact = api.artifact(f'{os.environ["WANDB_ENTITY"]}/model-registry/{registered_model_name}:{version}', type='model')
-        artifact.download("model")
+    model_path = f"model.keras"
+    scaler_path = f"{artifact_path}/scaler.save"
 
-        # Download the scaler
-        scaler_artifact = run.use_artifact(artifact_or_name="vocal-oath-259_scaler_weights:v0")
+    inferent(
+        func="TIME_SERIES_INTRADAY",
+        interval="30min",
+        target_symbol="QCOM",
+        period=(
+            datetime.strptime("2023-10-01", date_format),
+            datetime.now(),
+        ),
+        # Correlated symbols
+        correlated_symbols=["AAPL"],
+        # Indicator
+        indicator_settings={"MACD": {}, "BBANDS": {}, "RSI": {}},
+        sequence_length=60,
+        # Models
+        model_name="trend_lstm",
+        model_path=model_path,
+        scaler_path=scaler_path,
+    )
 
-        print(scaler_artifact)
+    print(scaler_path)
 
 
 if __name__ == "__main__":
@@ -180,5 +198,4 @@ if __name__ == "__main__":
     tuning_train()
 
     # Inferent
-    # inferent()
-
+    # inferent_process()

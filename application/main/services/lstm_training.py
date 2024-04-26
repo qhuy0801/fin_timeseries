@@ -211,7 +211,7 @@ def train(
             ReduceLROnPlateau(
                 monitor="val_loss" if validation_size is not None else "loss",
                 factor=0.95,
-                patience=30,
+                patience=15,
                 mode="max",
                 min_delta=0.0005,
             ),
