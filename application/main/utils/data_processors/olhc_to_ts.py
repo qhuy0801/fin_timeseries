@@ -17,7 +17,10 @@ def trend_ts(
     to_generator: bool = True,
     pct_change: bool = True,
     **kwargs: Any,
-) -> Generator[tuple[Any, Any, Any], Any, None] | tuple[ndarray, ndarray, ndarray]:
+) -> (
+    tuple[Generator[tuple[Any, Any, Any], Any, None], StandardScaler]
+    | tuple[Any, ndarray, ndarray, StandardScaler]
+):
     """
     Combine all dataframe into one time series
     Args:
@@ -83,7 +86,8 @@ def trend_ts(
     x = x[0].reset_index(drop=True)
 
     # Gather the x
-    x[x.columns] = StandardScaler().fit_transform(x[x.columns])
+    scaler = StandardScaler()
+    x[x.columns] = scaler.fit_transform(x[x.columns])
     x = x.to_numpy()
 
     if to_generator:
@@ -91,15 +95,15 @@ def trend_ts(
         return (
             (
                 time[i + sequence_length - 1],
-                x[i: i + sequence_length],
+                x[i : i + sequence_length],
                 y[i + sequence_length - 1],
             )
             for i in range(len(x) - sequence_length)
-        )
+        ), scaler
     else:
         # Process the data into arrays
         X, Y = [], []
         for i in range(len(x) - sequence_length + 1):
-            X.append(x[i: i + sequence_length])
+            X.append(x[i : i + sequence_length])
             Y.append(y[i + sequence_length - 1])
-        return time[sequence_length - 1:], np.array(X), np.array(Y)
+        return time[sequence_length - 1 :], np.array(X), np.array(Y), scaler
