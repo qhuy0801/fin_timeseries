@@ -211,7 +211,7 @@ def train(
             ReduceLROnPlateau(
                 monitor="val_loss" if validation_size is not None else "loss",
                 factor=0.95,
-                patience=3,
+                patience=30,
                 mode="max",
                 min_delta=0.0005,
             ),
@@ -241,25 +241,24 @@ def train(
         )
 
         # Saving and logging model to cloud
-        _model_path = f"{wandb_log.name if wandb_log is not None else 'model'}.keras"
+        _model_path = f"model.keras"
         model.save(_model_path)
 
         if wandb_log is not None:
-            model_artifact = wandb.Artifact(name=f"{wandb_log.name}_model_ckpt", type="model")
+            artifact = wandb.Artifact(
+                name=f"{wandb_log.name}_ckpt", type="model_n_scaler"
+            )
 
             # Add model
-            model_artifact.add_file(local_path=_model_path)
-            wandb_log.log_artifact(model_artifact)
+            artifact.add_file(local_path=_model_path)
 
             # Add scaler
             if isinstance(scaler, StandardScaler):
-                scaler_artifact = wandb.Artifact(name=f"{wandb_log.name}_scaler_weights", type="scaler")
-                scaler_path = (
-                    f"{wandb_log.name if wandb_log is not None else ''}_scaler.save"
-                )
+                scaler_path = f"scaler.save"
                 joblib.dump(value=scaler, filename=scaler_path)
-                scaler_artifact.add_file(local_path=scaler_path)
-                wandb_log.log_artifact(scaler_artifact)
+                artifact.add_file(local_path=scaler_path)
+
+            wandb_log.log_artifact(artifact)
 
             # Link model to registry
             if model_registry_name is not None:
@@ -278,10 +277,7 @@ def inferent(
     period: Optional[Tuple[datetime, datetime]] = None,
     correlated_symbols: Optional[List[str]] = None,
     indicator_settings: Optional[Dict[str, Dict[str, int | str]]] = None,
-    batch_size: int = 200,
     sequence_length: int = 60,
-    wandb_log: Optional[Run] = None,
-    model_registry_name: Optional[str] = None,
     **kwargs,
 ):
     # Load the model
@@ -320,8 +316,17 @@ def inferent(
     # Unpact the data
     timestamp, x, y, _ = data
 
+    # Get empty dataframe to store the prediction
+    result_table = []
+
     for _timestamp, _x, _y in zip(timestamp, x, y):
-        _y_pred = model(x, training=False)
+        [_y_pred] = model([x], training=False)
+        _data = {
+            "timestamp": _timestamp,
+            "predicted_prob": _y_pred,
+            "ground_truth": _y,
+        }
+        result_table.append(_data)
+    result_table = pd.DataFrame(result_table)
 
-
-    return None
+    return result_table
