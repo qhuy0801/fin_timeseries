@@ -92,7 +92,10 @@ def trend_ts(
     scaler = StandardScaler()
     if scaler_path is not None:
         scaler = joblib.load(scaler_path)
-    x[x.columns] = scaler.fit_transform(x[x.columns])
+        x[x.columns] = scaler.transform(x[x.columns])
+    else:
+        x[x.columns] = scaler.fit_transform(x[x.columns])
+
     x = x.to_numpy()
 
     if to_generator:
