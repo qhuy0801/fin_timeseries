@@ -75,7 +75,7 @@ def searching_train(config=None):
             target_symbol="QCOM",
             period=(
                 datetime.strptime("2014-04-01", date_format),
-                datetime.now(),
+                datetime.strptime("2023-10-01", date_format),
             ),
             # Correlated symbols
             correlated_symbols=config.correlated_symbols,
@@ -117,7 +117,7 @@ def tuning_train():
             target_symbol="QCOM",
             period=(
                 datetime.strptime("2018-10-01", date_format),
-                datetime.now(),
+                datetime.strptime("2023-10-01", date_format),
             ),
             # Correlated symbols
             correlated_symbols=["AAPL"],
