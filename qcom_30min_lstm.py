@@ -74,7 +74,7 @@ def searching_train(config=None):
             interval="30min",
             target_symbol="QCOM",
             period=(
-                datetime.strptime("2014-04-01", date_format),
+                datetime.strptime("2018-10-01", date_format),
                 datetime.strptime("2023-10-01", date_format),
             ),
             # Correlated symbols
