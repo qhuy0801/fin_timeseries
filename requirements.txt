@@ -19,3 +19,4 @@ wandb
 numpy
 ta
 joblib
+plotly

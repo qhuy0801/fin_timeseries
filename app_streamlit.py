@@ -12,7 +12,7 @@ with st.sidebar:
     selected = option_menu(
         menu_title="Main menu",
         menu_icon="cast",
-        options=["QCOM"],
+        options=["QCOM_LSTM"],
         icons=["cpu"],
         default_index=0,
     )

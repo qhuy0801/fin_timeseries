@@ -6,3 +6,5 @@ from .indicator_processors.indicator_setting import indicator_required_settings
 from .indicator_processors.indicator_processor import generate_indicator
 
 from .sql_utils import get_table_name
+
+from .frontend.markdown import mermaid
