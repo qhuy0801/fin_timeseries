@@ -20,3 +20,4 @@ numpy
 ta
 joblib
 plotly
+binclass-tools
